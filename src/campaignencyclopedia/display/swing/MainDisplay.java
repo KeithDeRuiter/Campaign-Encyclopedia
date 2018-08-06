@@ -13,6 +13,7 @@ import campaignencyclopedia.display.EntityDisplayFilter;
 import campaignencyclopedia.display.UserDisplay;
 import campaignencyclopedia.display.swing.action.SaveHelper;
 import campaignencyclopedia.display.NavigationPath;
+import campaignencyclopedia.display.swing.filtertree.CampaignTree;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -26,6 +27,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -47,7 +49,6 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -74,16 +75,19 @@ public class MainDisplay implements EditListener, UserDisplay {
     private JFrame m_frame;
 
     /** The starting dimensions of the top-level window. */
-    private static final Dimension m_windowSize = new Dimension(1000, 700);
+    private static final Dimension WINDOW_SIZE = new Dimension(1200, 800);
 
     /** A MenuManager for building menus as needed. */
     private MenuManager m_menuManager;
 
-    /** The JList of all of the Entities in the campaign. */
-    private JList<Entity> m_entityList;
-
-    /** The Entity JList Model, for storing the data and filter. */
-    private SortableListModel<Entity> m_entityModel;
+    /** The tree structure for managing the data in the "list" of all entities. */
+    private CampaignTree m_campaignTree;
+    
+    /** The Component for display of all of the Entities in the campaign, stored to UI purposes e.g. context menu. */
+    private Component m_entityTreeComponent;
+    
+    /** The split pane between the entity list and entity view/edit display. */
+    private JSplitPane m_entitySplitPane;
 
     /** The campaign title label. */
     private JLabel m_campaignTitleLabel;
@@ -226,16 +230,17 @@ public class MainDisplay implements EditListener, UserDisplay {
         }
 
         // Check to see if the Entity is already in our data manager
-        // If it is, remove it from the SortedListModel.
-        Entity cdmEntity = m_cdm.getEntity(entity.getId());
-        if (cdmEntity != null) {
-            m_entityModel.removeElement(cdmEntity);
+        // If it is, remove it (old version) from the tree's model and re-add (new version).
+        Entity previousState = m_cdm.getEntity(entity.getId());
+        if (previousState != null) {
+            m_campaignTree.removeEntity(previousState);
         }
+        m_campaignTree.insertEntity(entity);
+        m_campaignTree.selectEntity(entity);
 
-        // Add the new or updated Enitty to both the CDM and the SortedListModel
+        // Add the new or updated Entity to the CDM
         m_cdm.addOrUpdateEntity(entity);
-        m_entityModel.addElement(entity);
-        m_entityList.setSelectedValue(entity, true);
+
         // Add/Update the Relationships
         m_cdm.addOrUpdateAllRelationships(entity.getId(), relMgr);
         m_displayedEntityId = entity.getId();
@@ -278,7 +283,7 @@ public class MainDisplay implements EditListener, UserDisplay {
         if (entity.getId().equals(m_displayedEntityId)) {
             clearDisplayedEntity();
         }
-        m_entityModel.removeElement(entity);
+        m_campaignTree.removeEntity(entity);
         if (m_navPath != null) {
             m_navPath.removeAll(entity.getId());
             updateNavButtons();
@@ -300,7 +305,7 @@ public class MainDisplay implements EditListener, UserDisplay {
     @Override
     public void clearAllData() {
         clearDisplayedEntity();
-        m_entityModel.clear();
+        m_campaignTree.clear();
         m_campaignTitleLabel.setText("");
         m_relationshipEditor.clearData();
     }
@@ -310,7 +315,7 @@ public class MainDisplay implements EditListener, UserDisplay {
     public void displayCampaign(Campaign campaign) {
         clearAllData();
         m_campaignTitleLabel.setText(campaign.getName());
-        m_entityModel.addAllElements(campaign.getEntities());
+        m_campaignTree.insertEntities(campaign.getEntities());
     }
 
     /** {@inheritDoc} */
@@ -350,13 +355,16 @@ public class MainDisplay implements EditListener, UserDisplay {
             // Update the nav history.
             updateNavHistory(entity.getId());
             updateNavButtons();
+            
+            //Select the Entity in the tree
+            m_campaignTree.selectEntity(entity);
         }
     }
 
     /** Launches the display window of this application. */
     public void launch() {
         m_frame.pack();
-        DisplayUtilities.positionWindowInDisplayCenter(m_frame, m_windowSize);
+        DisplayUtilities.positionWindowInDisplayCenter(m_frame, WINDOW_SIZE);
         m_searchBox.requestFocus();
         updateNavButtons();
         m_frame.setVisible(true);
@@ -370,7 +378,7 @@ public class MainDisplay implements EditListener, UserDisplay {
         } catch (IOException ex) {
             LOGGER.log(Level.CONFIG, "Unable to load application icon.", ex);
         }
-        m_frame.setPreferredSize(m_windowSize);
+        m_frame.setPreferredSize(WINDOW_SIZE);
         m_frame.setLayout(new BorderLayout());
         m_frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -399,9 +407,20 @@ public class MainDisplay implements EditListener, UserDisplay {
         // Create entity editor
         Component entityDisplay = createEntityDisplay();
         
-        // Add entity components in a split pane
-        JSplitPane entitySplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, entityList, entityDisplay);
-        panel.add(entitySplitPane, BorderLayout.CENTER);
+        // Add entity components in a split pane and create resize listener for the tree/list
+        m_entitySplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, entityList, entityDisplay);
+        m_entitySplitPane.setDividerSize(7);
+//        //TODO resize split window area with tree expansion?
+//        Jury is out on if this is a good idea or not.  Makes it impossible to move split pane divider yourself.
+//        m_entityTreeComponent.addComponentListener(new ComponentAdapter() {
+//            @Override
+//            public void componentResized(ComponentEvent e) {
+//                super.componentResized(e);
+//                m_entitySplitPane.resetToPreferredSizes();
+//            }
+//        });
+        
+        panel.add(m_entitySplitPane, BorderLayout.CENTER);
         
         // Create and set main menu
         m_menuManager = new MenuManager(m_frame, this, m_cdm);
@@ -674,73 +693,47 @@ public class MainDisplay implements EditListener, UserDisplay {
     }
 
     /**
-     * Creates and returns the EntityList.
-     * @return the Entity List component.
+     * Creates and returns the listing of entities.
+     * @return the Entity list component.
      */
     private Component createEntityList() {
-        m_entityModel = new SortableListModel<>();
-        m_entityModel.addAllElements(m_cdm.getAllEntities());
-
-        m_entityList = new JList<>();
-        m_entityList.setCellRenderer(new ColoredDisplayableCellRenderer());
-        m_entityList.setModel(m_entityModel);
-
-        // Define reusable showEntity runnable (for both key and mouse listeners)
-        final Runnable showEntity = new Runnable() {
-            @Override
-            public void run() {
-                int selectedIndex = m_entityList.getSelectedIndex();
-                if (selectedIndex >= 0) {
-                    Entity selected = m_entityModel.getElementAt(selectedIndex);
-                    if (selected != null) {
-                        displayEntity(selected);
-                    }
-                }
-            }
-        };
-
+        //Create the entity tree/list and add the current entities
+        m_campaignTree = new CampaignTree();
+        m_entityTreeComponent = m_campaignTree.getComponent();
+        m_campaignTree.insertEntities(m_cdm.getAllEntities());
+        
         // Setup Mouse Listener
-        m_entityList.addMouseListener(new MouseAdapter() {
+        m_entityTreeComponent.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent me) {
-                m_entityList.setSelectedIndex(m_entityList.locationToIndex(me.getPoint()));
-                int selectedIndex = m_entityList.getSelectedIndex();
-                if (me.getClickCount() > 1 && selectedIndex >= 0) {
-                    showEntity.run();
-                } else if (SwingUtilities.isRightMouseButton(me)) {
-
-                    if (selectedIndex >= 0) {
-                        Entity selectedEntity =  m_entityModel.getElementAt(selectedIndex);
-                        JPopupMenu contextMenu = m_menuManager.getEntityContextMenu(selectedEntity);
-                        contextMenu.show(m_entityList, me.getX(), me.getY());
-                    }
+                Entity selectedEntity = m_campaignTree.getSelectedEntity();
+                if (me.getClickCount() > 1 && selectedEntity != null) {
+                    displayEntity(selectedEntity);
+                } else if (SwingUtilities.isRightMouseButton(me) && selectedEntity != null) {
+                    //Create a context menu for right click      
+                    JPopupMenu contextMenu = m_menuManager.getEntityContextMenu(selectedEntity);
+                    contextMenu.show(m_campaignTree.getComponent(), me.getX(), me.getY());
                 }
             }
 
         });
 
         // Setup Key Listener
-        m_entityList.addKeyListener(new KeyListener() {
-            @Override
-            public void keyTyped(KeyEvent ke) {
-                // Ignored
-            }
+        m_entityTreeComponent.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent ke) {
-                int selectedIndex = m_entityList.getSelectedIndex();
-                if (ke.getKeyChar() == KeyEvent.VK_ENTER && selectedIndex >= 0) {
-                    showEntity.run();
+                //Get the thing currently selected
+                Entity selectedEntity = m_campaignTree.getSelectedEntity();
+                if (ke.getKeyChar() == KeyEvent.VK_ENTER && selectedEntity != null) {
+                    displayEntity(selectedEntity);
                 }
-            }
-            @Override
-            public void keyReleased(KeyEvent ke) {
-                // Ignored
             }
         });
         
-        return new JScrollPane(m_entityList);
+        return new JScrollPane(m_entityTreeComponent);
     }
 
+    
     /**
      * Create title bar and filter controls.
      * @return a JPanel containing the title bar and filter controls.
@@ -786,7 +779,9 @@ public class MainDisplay implements EditListener, UserDisplay {
         m_entityTypeFilterComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent ie) {
-                updateEntityFilter();
+                if (ie.getStateChange() == ItemEvent.SELECTED) {
+                    updateEntityFilter();
+                }
             }
         });
         
@@ -812,10 +807,11 @@ public class MainDisplay implements EditListener, UserDisplay {
             @Override
             public void keyPressed(KeyEvent ke) {
                 if (ke.getKeyChar() == KeyEvent.VK_ENTER) {
-                    if (m_entityModel.getSize() > 0) {
-                        m_entityList.setSelectedIndex(0);
-                    }
-                    m_entityList.requestFocus();
+                    //Select the first thing when we hit enter  TODO for tree
+//                    if (m_entityTreeModel.getSize() > 0) {
+//                        m_entityList.setSelectedIndex(0);
+//                    }
+                    m_entityTreeComponent.requestFocus();
                 }
             }
             @Override
@@ -885,7 +881,6 @@ public class MainDisplay implements EditListener, UserDisplay {
         gbc.weightx = 0.0f;
         panel.add(m_forwardButton, gbc);
 
-        // Return
         return panel;
     }
 
@@ -896,10 +891,16 @@ public class MainDisplay implements EditListener, UserDisplay {
     private void updateEntityFilter() {
         String searchString = m_searchBox.getText().trim();
         Object type = m_entityTypeFilterComboBox.getSelectedItem();
+        boolean showSecrets = !m_filterCheckBox.isSelected();
         if (type instanceof EntityType) {
-            m_entityModel.setFilter(new EntityDisplayFilter(searchString, (EntityType)type, !m_filterCheckBox.isSelected()));
+            m_campaignTree.filterTree(new EntityDisplayFilter(searchString, (EntityType)type, showSecrets));
+        } else if (!"".equals(searchString) || !showSecrets){
+            //the "ALL" category was snuck into the combobox, and so is not an entity type.
+            //This is the ALL category as long as there is search text or we are hiding secrets
+            m_campaignTree.filterTree(new EntityDisplayFilter(searchString, null, showSecrets));
         } else {
-            m_entityModel.setFilter(new EntityDisplayFilter(searchString, null, !m_filterCheckBox.isSelected()));
+            //No search string, ALL category, and don't hide secrets.  Use null for no filtering/
+            m_campaignTree.filterTree(null);
         }
     }
 

@@ -29,6 +29,16 @@ public class Colors {
 
     /** The Color to render Lines. */
     static final Color LINE = new Color(84, 84, 84);
+
+    /** The Color to render Clues. */
+    static final Color PLOT_CLUE = Color.YELLOW;
+
+    /** The Color to render Conclusions. */
+    static final Color PLOT_CONCLUSION = Color.YELLOW.darker();
+    
+    /** The Color to render Unknown things. */
+    static final Color UNKNOWN = new Color(164, 164, 164);
+    
  
     /**
      * Returns the color for a given Entity Type.
@@ -49,7 +59,11 @@ public class Colors {
                 return ORG;
             case EVENT:
                 return EVENT;
+            case PLOT_CLUE:
+                return PLOT_CLUE;
+            case PLOT_CONCLUSION:
+                return PLOT_CONCLUSION;
         }
-        throw new IllegalStateException("Received request to get color for unknown entity type:  " + type.name());
+        return UNKNOWN;
     }
 }
