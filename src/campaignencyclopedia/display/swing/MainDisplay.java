@@ -726,6 +726,8 @@ public class MainDisplay implements EditListener, UserDisplay {
                 Entity selectedEntity = m_campaignTree.getSelectedEntity();
                 if (ke.getKeyChar() == KeyEvent.VK_ENTER && selectedEntity != null) {
                     displayEntity(selectedEntity);
+                } else if (ke.getKeyChar() == KeyEvent.VK_DELETE && selectedEntity != null) {
+                    removeEntity(selectedEntity);
                 }
             }
         });
