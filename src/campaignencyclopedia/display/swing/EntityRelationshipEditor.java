@@ -137,9 +137,11 @@ public class EntityRelationshipEditor {
                 
                 // Double Click to Navigate
                 if (me.getClickCount() > 1) {
-                    Relationship selected = m_model.getElementAt(selectedIndex);
-                    if (selected != null) {
-                        m_entityDisplay.showEntity(selected.getRelatedEntity());
+                    if (selectedIndex >= 0) {
+                        Relationship selected = m_model.getElementAt(selectedIndex);
+                        if (selected != null) {
+                            m_entityDisplay.showEntity(selected.getRelatedEntity());
+                        }
                     }
                  
                 // Right-Click, Context Menu
