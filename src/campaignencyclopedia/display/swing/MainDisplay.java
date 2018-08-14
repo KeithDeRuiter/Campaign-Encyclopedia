@@ -13,6 +13,7 @@ import campaignencyclopedia.display.EntityDisplayFilter;
 import campaignencyclopedia.display.UserDisplay;
 import campaignencyclopedia.display.swing.action.SaveHelper;
 import campaignencyclopedia.display.NavigationPath;
+import campaignencyclopedia.display.swing.action.DeleteEntityAction;
 import campaignencyclopedia.display.swing.filtertree.CampaignTree;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -121,18 +122,11 @@ public class MainDisplay implements EditListener, UserDisplay {
     /** A button for adding/updating the currently displayed entity. */
     private JButton m_commitEntityButton;
 
-    /** The EntityData Display for public data. */
-    private EntityDataEditor m_public;
-
-    /** An EntityDataDisplay for secret data. */
-    private EntityDataEditor m_secret;
-
-    /** An editor for Entity Relationship data. */
-    private EntityRelationshipEditor m_relationshipEditor;
-
     /** The JCheckBox for making this Entity secret (or not). */
     private JCheckBox m_secretEntityCheckbox;
 
+    /** A display for the rest of the entity info such as tags, descriptions, and relationships. */
+    private EntityDetailsDisplay m_entityDetails;
 
     // BACKING DATA
     /** The ID of the currently displayed Entity, if it exists or the entity displayed has one.  If not, this value is null. */
@@ -193,7 +187,7 @@ public class MainDisplay implements EditListener, UserDisplay {
         
         // Get Displayed Relationships and add them.
         RelationshipManager relMgr = new RelationshipManager();
-        for (Relationship rel : m_relationshipEditor.getData()) {
+        for (Relationship rel : m_entityDetails.getRelationships()) {
             // If the entity is secret and it has any public relationships, they must now be secret, so update them.
             if (entity.isSecret() && !rel.isSecret()) {
                 relMgr.addRelationship(new Relationship(rel.getEntityId(), rel.getRelatedEntity(), rel.getRelationshipText(), true));
@@ -246,8 +240,7 @@ public class MainDisplay implements EditListener, UserDisplay {
         m_displayedEntityId = entity.getId();
 
         // Force Update of display for relationship changes.
-        m_relationshipEditor.clearData();
-        m_relationshipEditor.setData(relMgr.getAllRelationships());            
+        m_entityDetails.setRelationships(relMgr.getAllRelationships());
     }
 
     /**
@@ -258,8 +251,8 @@ public class MainDisplay implements EditListener, UserDisplay {
         UUID id;
         String name = m_entityNameField.getText().trim();
         EntityType type = (EntityType)m_typeSelector.getSelectedItem();
-        EntityData publicData = m_public.getEntityData();
-        EntityData secretData = m_secret.getEntityData();
+        EntityData publicData = m_entityDetails.getPublicData();
+        EntityData secretData = m_entityDetails.getSecretData();
         if (m_displayedEntityId == null) {
             id = UUID.randomUUID();
         } else {
@@ -295,10 +288,8 @@ public class MainDisplay implements EditListener, UserDisplay {
     public void clearDisplayedEntity() {
         m_displayedEntityId = null;
         m_entityNameField.setText("");
-        m_public.clear();
-        m_secret.clear();
         m_secretEntityCheckbox.setSelected(false);
-        m_relationshipEditor.clearData();
+        m_entityDetails.clear();
     }
 
     /** {@inheritDoc} */
@@ -307,7 +298,6 @@ public class MainDisplay implements EditListener, UserDisplay {
         clearDisplayedEntity();
         m_campaignTree.clear();
         m_campaignTitleLabel.setText("");
-        m_relationshipEditor.clearData();
     }
 
     /** {@inheritDoc} */
@@ -347,9 +337,8 @@ public class MainDisplay implements EditListener, UserDisplay {
             m_displayedEntityId = entity.getId();
             m_entityNameField.setText(entity.getName());
             m_typeSelector.setSelectedItem(entity.getType());
-            m_public.setEntityData(entity.getPublicData());
-            m_secret.setEntityData(entity.getSecretData());
-            m_relationshipEditor.setData(m_cdm.getRelationshipsForEntity(m_displayedEntityId).getAllRelationships());
+            m_entityDetails.displayEntityDetails(entity);
+            m_entityDetails.setRelationships(m_cdm.getRelationshipsForEntity(m_displayedEntityId).getAllRelationships());
             m_secretEntityCheckbox.setSelected(entity.isSecret());
 
             // Update the nav history.
@@ -453,7 +442,7 @@ public class MainDisplay implements EditListener, UserDisplay {
 
                 // Or if the Relationship Data has changed, return false...
                 RelationshipManager rm = m_cdm.getRelationshipsForEntity(m_displayedEntityId);
-                if (!rm.getAllRelationships().equals(m_relationshipEditor.getData())) {
+                if (!rm.getAllRelationships().equals(m_entityDetails.getRelationships())) {
                     return false;
                 }
             }
@@ -480,7 +469,6 @@ public class MainDisplay implements EditListener, UserDisplay {
      */
     private JPanel createEntityDisplay() {
         // Init Components
-        JPanel panel = new JPanel(new GridBagLayout());
         m_entityNameField = new JTextField(20);
         m_entityNameField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -557,14 +545,12 @@ public class MainDisplay implements EditListener, UserDisplay {
         m_typeSelector.setBorder(BorderFactory.createLineBorder(MetalLookAndFeel.getTextHighlightColor()));
         
 
-        m_public = new EntityDataEditor(this, false);
-        m_secret = new EntityDataEditor(this, true);
-        m_relationshipEditor = new EntityRelationshipEditor(m_frame, m_cdm, this, "Relationships", this);
-
-        Insets insets = new Insets(3, 3, 3, 3);
+        m_entityDetails = new EntityDetailsDisplay(m_frame, m_cdm, this);
+        m_entityDetails.addEditListener(this);
 
 
         // Layout display
+        Insets insets = new Insets(3, 3, 3, 3);
         // Create Top Row Panel --> Name / Is Secret / Type / Clear Btn / Add Btn
         JPanel topRow = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -591,104 +577,14 @@ public class MainDisplay implements EditListener, UserDisplay {
         gbc.gridx = 5;
         topRow.add(m_commitEntityButton, gbc);
 
-        GridBagConstraints mainGbc = new GridBagConstraints();
-        mainGbc.gridx = 0;
-        mainGbc.gridy = 0;
-        mainGbc.fill = GridBagConstraints.HORIZONTAL;
-        mainGbc.gridwidth = 4;
-        mainGbc.insets = insets;
-        panel.add(topRow, mainGbc);
-
-        // FIRST COLUMN
-        // --- Public Description Label
-        mainGbc.gridx = 0;
-        mainGbc.gridy = 1;
-        mainGbc.gridwidth = 2;
-        mainGbc.weighty = 0.0f;
-        mainGbc.weightx = 1.0f;
-        mainGbc.fill = GridBagConstraints.BOTH;
-        mainGbc.anchor = GridBagConstraints.PAGE_END;
-        panel.add(m_public.getDescriptionEditor().getTitle(), mainGbc);
-
-        // --- Public Description Editor Component
-        mainGbc.gridy = 2;
-        mainGbc.weighty = 1.0f;
-        JScrollPane publicDescriptionScrollPane = new JScrollPane(m_public.getDescriptionEditor().getDescriptionComponent());
-        publicDescriptionScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        publicDescriptionScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        panel.add(publicDescriptionScrollPane, mainGbc);
-
-        // --- Relationships Label
-        mainGbc.gridy = 3;
-        mainGbc.weighty = 0.0f;
-        panel.add(m_relationshipEditor.getTitle(), mainGbc);
-
-        // --- Public Editor Component
-        mainGbc.gridy = 4;
-        mainGbc.gridheight = 4;
-        mainGbc.weighty = 1.0f;
-        mainGbc.fill = GridBagConstraints.BOTH;
-        JScrollPane relationShipScrollPane = new JScrollPane(m_relationshipEditor.getEditorComponent());
-        panel.add(relationShipScrollPane, mainGbc);
-
-        // --- Add Relationship Button
-        mainGbc.gridy = 1;
-        mainGbc.gridy = 8;
-        mainGbc.weighty = 0.0f;
-        mainGbc.gridwidth = 1;
-        mainGbc.gridheight = 1;
-        mainGbc.fill = GridBagConstraints.NONE;
-        mainGbc.anchor = GridBagConstraints.LAST_LINE_START;
-        panel.add(m_relationshipEditor.getAddRelationshipButton(), mainGbc);
-
-        // SECOND COLUMN
-        // --- Secret Description Label
-        mainGbc.gridx = 2;
-        mainGbc.gridy = 1;
-        mainGbc.gridwidth = 2;
-        mainGbc.weighty = 0.0f;
-        mainGbc.weightx = 1.0f;
-        mainGbc.fill = GridBagConstraints.BOTH;
-        panel.add(m_secret.getDescriptionEditor().getTitle(), mainGbc);
-
-        // --- Secret Description Editor Component
-        mainGbc.gridy = 2;
-        mainGbc.weighty = 1.0f;
-        JScrollPane secretDescriptionScrollPane = new JScrollPane(m_secret.getDescriptionEditor().getDescriptionComponent());
-        secretDescriptionScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        secretDescriptionScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        panel.add(secretDescriptionScrollPane, mainGbc);
-
-        // --- Public Tags Label
-        mainGbc.gridy = 3;
-        mainGbc.weighty = 0.0f;
-        panel.add(m_public.getTagsEditor().getTitle(), mainGbc);
-
-        // --- Public Tags Editor
-        mainGbc.gridy = 4;
-        mainGbc.gridheight = 1;
-        mainGbc.weighty = 0.1f;
-        mainGbc.fill = GridBagConstraints.BOTH;
-        JScrollPane pubTagScrollPane = new JScrollPane(m_public.getTagsEditor().getEditorComponent());
-        pubTagScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        pubTagScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        panel.add(pubTagScrollPane, mainGbc);
-
-        // --- Secret Tags Label
-        mainGbc.gridy = 5;
-        mainGbc.gridheight = 1;
-        mainGbc.weighty = 0.0f;
-        panel.add(m_secret.getTagsEditor().getTitle(), mainGbc);
-
-        // --- Secret Tags Editor
-        mainGbc.gridy = 6;
-        mainGbc.gridheight = 2;
-        mainGbc.weighty = 0.1f;
-        JScrollPane secretTagScrollPane = new JScrollPane(m_secret.getTagsEditor().getEditorComponent());
-        secretTagScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        secretTagScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        panel.add(secretTagScrollPane, mainGbc);
-
+        
+        //Add top row
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(topRow, BorderLayout.NORTH);
+        
+        //Add details for relationships etc.
+        panel.add(m_entityDetails.getDisplayableComponent(), BorderLayout.CENTER);
+        
         return panel;
     }
 
@@ -727,7 +623,8 @@ public class MainDisplay implements EditListener, UserDisplay {
                 if (ke.getKeyChar() == KeyEvent.VK_ENTER && selectedEntity != null) {
                     displayEntity(selectedEntity);
                 } else if (ke.getKeyChar() == KeyEvent.VK_DELETE && selectedEntity != null) {
-                    removeEntity(selectedEntity);
+                    DeleteEntityAction dea = new DeleteEntityAction(m_frame, selectedEntity, m_cdm, MainDisplay.this);  //MainDisplay.this accesses the instance of containing class
+                    dea.actionPerformed(new ActionEvent(ke.getSource(), ke.getID(), ""));
                 }
             }
         });
@@ -760,7 +657,7 @@ public class MainDisplay implements EditListener, UserDisplay {
             }
         });
         
-        m_entityTypeFilterComboBox = new JComboBox<ColoredDisplayable>();
+        m_entityTypeFilterComboBox = new JComboBox<>();
         m_entityTypeFilterComboBox.addItem(new ColoredDisplayable() {
             @Override
             public Color getColor() {
@@ -809,7 +706,7 @@ public class MainDisplay implements EditListener, UserDisplay {
             @Override
             public void keyPressed(KeyEvent ke) {
                 if (ke.getKeyChar() == KeyEvent.VK_ENTER) {
-                    //Select the first thing when we hit enter  TODO for tree
+                    //Select the first thing when we hit enter  //TODO enter select on search for tree
 //                    if (m_entityTreeModel.getSize() > 0) {
 //                        m_entityList.setSelectedIndex(0);
 //                    }
@@ -915,7 +812,8 @@ public class MainDisplay implements EditListener, UserDisplay {
             if (m_navPath == null) {
                 m_navPath = new NavigationPath(id);
             } else {
-                if (!m_navPath.getCurrentId().equals(id)) {
+                UUID currentId = m_navPath.getCurrentId();  //Protect against empty list
+                if (currentId == null || !currentId.equals(id)) {
                     m_navPath.add(id);
                 }
             }

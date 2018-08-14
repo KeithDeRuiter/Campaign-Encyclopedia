@@ -10,7 +10,7 @@ import campaignencyclopedia.data.Entity;
 public interface UserDisplay extends EntityDisplay {
 
     /**
-     * Removes the supplied Entity .
+     * Removes the supplied Entity from the display.
      * @param entity the Entity to remove.
      */
     public void removeEntity(Entity entity);

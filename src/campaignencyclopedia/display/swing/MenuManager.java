@@ -1,14 +1,7 @@
 package campaignencyclopedia.display.swing;
 
-import campaignencyclopedia.data.Campaign;
-import campaignencyclopedia.data.CampaignCalendar;
 import campaignencyclopedia.data.CampaignDataManager;
 import campaignencyclopedia.data.Entity;
-import campaignencyclopedia.data.EntityData;
-import campaignencyclopedia.data.EntityType;
-import campaignencyclopedia.data.Relationship;
-import campaignencyclopedia.data.RelationshipManager;
-import campaignencyclopedia.data.TimelineEntry;
 import campaignencyclopedia.display.UserDisplay;
 import campaignencyclopedia.display.swing.action.ConfigureCampaignCalendarAction;
 import campaignencyclopedia.display.swing.action.ConfigureRelationshipsAction;
@@ -29,13 +22,6 @@ import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
 import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;

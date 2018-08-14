@@ -15,7 +15,8 @@ public enum EntityType implements ColoredDisplayable {
     EVENT("Event", EntityDomain.WORLD),
     ORGANIZATION("Organization", EntityDomain.WORLD),
     PLOT_CLUE("Clue", EntityDomain.PLOT),
-    PLOT_CONCLUSION("Conclusion", EntityDomain.PLOT);
+    PLOT_CONCLUSION("Conclusion", EntityDomain.PLOT),
+    PLOT_NODE("Node", EntityDomain.PLOT);
 
     /** The display String for the EntityType. */
     private final String m_displayString;

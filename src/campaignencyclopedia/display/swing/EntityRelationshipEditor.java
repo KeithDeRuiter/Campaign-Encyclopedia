@@ -234,6 +234,14 @@ public class EntityRelationshipEditor {
         m_model.addElement(rel);
     }
 
+    /** 
+     * Removes the supplied Relationship from this Editor.
+     * @param rel the Relationship to remove.
+     */
+    public void removeRelationship(Relationship rel) {
+        m_model.removeElement(rel);
+    }
+
     /**
      * Returns the Relationship data displayed in this Editor.
      * @return the Relationship data displayed in this Editor.

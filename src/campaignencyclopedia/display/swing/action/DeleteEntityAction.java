@@ -2,8 +2,6 @@ package campaignencyclopedia.display.swing.action;
 
 import campaignencyclopedia.data.CampaignDataManager;
 import campaignencyclopedia.data.Entity;
-import campaignencyclopedia.data.EntityData;
-import campaignencyclopedia.data.EntityDataBuilder;
 import campaignencyclopedia.data.Relationship;
 import campaignencyclopedia.data.RelationshipManager;
 import campaignencyclopedia.data.TimelineEntry;
