@@ -298,6 +298,9 @@ public class MainDisplay implements EditListener, UserDisplay {
         clearDisplayedEntity();
         m_campaignTree.clear();
         m_campaignTitleLabel.setText("");
+        //Reset nav path to null, which is how the app initializes it
+        m_navPath = null;
+        updateNavButtons();
     }
 
     /** {@inheritDoc} */
