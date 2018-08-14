@@ -103,9 +103,12 @@ public class NavigationPath {
 
     /**
      * Returns the current ID that the cursor is pointing at.
-     * @return the current ID that the cursor is pointing at.
+     * @return the current ID that the cursor is pointing at, or {@code null} if there is no cursor position (e.g. empty).
      */
     public UUID getCurrentId() {
+        if (m_history.isEmpty()) {
+            return null;
+        }
         return m_history.get(m_cursor);
     }
 
@@ -158,7 +161,8 @@ public class NavigationPath {
     public void removeAll(UUID id) {
         while (m_history.contains(id)) {
             int index = m_history.indexOf(id);
-            if (index < m_cursor) {
+            //If what we found was where the cursor was, or before it, decrement cursor (unless cursor would go below 0)
+            if (index <= m_cursor && m_cursor > 0) {
                 m_cursor = m_cursor - 1;
             }
             m_history.remove(id);
