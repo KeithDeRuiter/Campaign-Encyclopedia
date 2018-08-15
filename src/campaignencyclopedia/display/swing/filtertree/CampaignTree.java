@@ -10,8 +10,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import javax.swing.JTree;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
@@ -79,7 +82,7 @@ public class CampaignTree {
         m_entityTree.setCellRenderer(new ColoredDisplayableCellRenderer());
 
 //        //TODO determine if we should force domain nodes open
-//        //Force domain nodes to stay open, not sure if desireable...
+//        //Force domain nodes to stay open, not sure if desireable... especially if we default to open
 //        m_entityTree.addTreeWillExpandListener(new TreeWillExpandListener() {
 //            @Override
 //            public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
@@ -97,6 +100,9 @@ public class CampaignTree {
 //                }
 //            }
 //        });
+        
+        //Start out with the domain nodes expanded
+        expandDomainNodes(true);
     }
 
     /**
@@ -208,8 +214,30 @@ public class CampaignTree {
         visRoot.removeAllChildren();
         createDefaultEntityTreeNodes(visRoot);
         m_visibleTreeModel.reload();
+        
+        expandDomainNodes(true);
     }
 
+    /**
+     * Forces expanding or collapsing of the entity domain nodes in the campaign tree.
+     * @param expand {code true} to expand, {@code false} to collapse.
+     */
+    private void expandDomainNodes(boolean expand) {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) m_entityTree.getModel().getRoot();
+        
+        //Iterate over all children of the root, and expand if they are domains (should always be for now, more of a protection)
+        for (DefaultMutableTreeNode n : JTreeUtil.children(node)) {
+            if (n.getUserObject() instanceof EntityDomain) {
+                TreePath path = new TreePath(n.getPath());
+                if (expand) {
+                    m_entityTree.expandPath(path);
+                } else {
+                    m_entityTree.collapsePath(path);
+                }
+            }
+        }
+    }
+    
     /**
      * Creates the tree nodes for the entities in the entity tree based on entity domain, type, and
      * the entities themselves.
