@@ -79,27 +79,29 @@ public class CampaignTree {
         m_entityTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         m_entityTree.setExpandsSelectedPaths(true);
         m_entityTree.setScrollsOnExpand(true);
+        m_entityTree.setShowsRootHandles(false);
         m_entityTree.setCellRenderer(new ColoredDisplayableCellRenderer());
 
-//        //TODO determine if we should force domain nodes open
-//        //Force domain nodes to stay open, not sure if desireable... especially if we default to open
-//        m_entityTree.addTreeWillExpandListener(new TreeWillExpandListener() {
-//            @Override
-//            public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
-//                //Do nothing
-//            }
-//
-//            @Override
-//            public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
-//                DefaultMutableTreeNode node = (DefaultMutableTreeNode)(event.getPath().getLastPathComponent());
-//                System.out.println("trying to collapse!");
-//                //Don't allow collapse of domain nodes
+        m_entityTree.addTreeWillExpandListener(new TreeWillExpandListener() {
+            @Override
+            public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
+                //Do nothing
+            }
+
+            @Override
+            public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode)(event.getPath().getLastPathComponent());
+                //Force root node to stay open
+                if (node.isRoot()) {
+                    throw new ExpandVetoException(event);
+                }
+                
+//                //Don't allow collapse of domain nodes  //TODO determine if we should force domain nodes open?
 //                if (node.getUserObject() instanceof EntityDomain) {
-//                    System.out.println("VETO!");
 //                    throw new ExpandVetoException(event);
 //                }
-//            }
-//        });
+            }
+        });
         
         //Start out with the domain nodes expanded
         expandDomainNodes(true);
