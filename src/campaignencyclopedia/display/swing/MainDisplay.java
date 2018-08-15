@@ -340,8 +340,7 @@ public class MainDisplay implements EditListener, UserDisplay {
             m_displayedEntityId = entity.getId();
             m_entityNameField.setText(entity.getName());
             m_typeSelector.setSelectedItem(entity.getType());
-            m_entityDetails.displayEntityDetails(entity);
-            m_entityDetails.setRelationships(m_cdm.getRelationshipsForEntity(m_displayedEntityId).getAllRelationships());
+            m_entityDetails.displayEntityDetails(entity, m_cdm.getRelationshipsForEntity(m_displayedEntityId).getAllRelationships());
             m_secretEntityCheckbox.setSelected(entity.isSecret());
 
             // Update the nav history.
@@ -545,13 +544,27 @@ public class MainDisplay implements EditListener, UserDisplay {
         for (EntityType type : EntityType.values()) {
             m_typeSelector.addItem(type);
         }
-        m_typeSelector.setEditable(true);
+        m_typeSelector.setEditable(true);  //Must be marked as editable in order for the editor component to work below
         m_typeSelector.setRenderer(new ColoredDisplayableCellRenderer());
         m_typeSelector.setEditor(new ColoredDisplayableComboBoxEditor());
         m_typeSelector.setBorder(BorderFactory.createLineBorder(MetalLookAndFeel.getTextHighlightColor()));
+        m_typeSelector.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                //Ignore deselect, only do work on selection
+                if (e.getStateChange() == ItemEvent.DESELECTED) {
+                    return;
+                }
+                
+                //Type has been changed/reselected, so see if we need to swap out the details view
+                Entity currentEntity = getDisplayedEntity();
+                Set<Relationship> currentRelationships = m_entityDetails.getRelationships();
+                //Easiest way is to reset the current entity on it to update domain (using currently displayed data)
+                m_entityDetails.displayEntityDetails(currentEntity, currentRelationships);
+            }
+        });
         
-
-        m_entityDetails = new EntityDetailsDisplay(m_frame, m_cdm, this);
+        m_entityDetails = new SwitchableEntityDetailsDisplay(m_frame, m_cdm, this);
         m_entityDetails.addEditListener(this);
 
 
