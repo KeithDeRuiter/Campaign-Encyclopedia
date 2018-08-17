@@ -76,7 +76,7 @@ public class MainDisplay implements EditListener, UserDisplay {
     private JFrame m_frame;
 
     /** The starting dimensions of the top-level window. */
-    private static final Dimension WINDOW_SIZE = new Dimension(1200, 800);
+    private static final Dimension WINDOW_SIZE = new Dimension(1600, 900);
 
     /** A MenuManager for building menus as needed. */
     private MenuManager m_menuManager;

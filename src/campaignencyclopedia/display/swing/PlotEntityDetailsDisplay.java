@@ -5,6 +5,7 @@ import campaignencyclopedia.data.Entity;
 import campaignencyclopedia.data.EntityData;
 import campaignencyclopedia.data.Relationship;
 import campaignencyclopedia.display.EntityDisplay;
+import campaignencyclopedia.display.swing.graphical.PlotEntityCanvas;
 import java.awt.Component;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
@@ -53,6 +54,9 @@ public class PlotEntityDetailsDisplay implements EntityDetailsDisplay {
 
     /** An editor for Entity Relationship data. */
     private EntityRelationshipEditor m_relationshipEditor;
+    
+    /** The graphical display of the plot entity and its plot-related relationships. */
+    private PlotEntityCanvas m_visualization;
 
 
     /**
@@ -81,17 +85,20 @@ public class PlotEntityDetailsDisplay implements EntityDetailsDisplay {
         m_public.clear();
         m_secret.clear();
         m_relationshipEditor.clearData();
+        m_visualization.clearAllData();
     }
     
     /** 
      * {@inheritDoc}
-     * This implementation just forwards calls to the other appropriate setters as a convenience.
+     * This implementation forwards calls to the other appropriate setters as a convenience, and
+     * triggers display of the entity in the visualization pane.
      */
     @Override
     public void displayEntityDetails(Entity entity, Set<Relationship> relationships) {
         setPublicData(entity.getPublicData());
         setSecretData(entity.getSecretData());
         setRelationships(relationships);
+        m_visualization.show(entity);
     }
     
     /** {@inheritDoc} */
@@ -155,14 +162,13 @@ public class PlotEntityDetailsDisplay implements EntityDetailsDisplay {
         GridBagConstraints mainGbc = new GridBagConstraints();
         mainGbc.gridx = 0;
         mainGbc.gridy = 0;
+        mainGbc.weightx = 0.2f;
         mainGbc.insets = insets;
+        mainGbc.fill = GridBagConstraints.BOTH;
 
         // FIRST COLUMN
         // --- Public Description Label
-        mainGbc.gridwidth = 2;
         mainGbc.weighty = 0.0f;
-        mainGbc.weightx = 1.0f;
-        mainGbc.fill = GridBagConstraints.BOTH;
         mainGbc.anchor = GridBagConstraints.PAGE_END;
         panel.add(m_public.getDescriptionEditor().getTitle(), mainGbc);
 
@@ -181,9 +187,7 @@ public class PlotEntityDetailsDisplay implements EntityDetailsDisplay {
 
         // --- Public Tags Editor
         mainGbc.gridy = 3;
-        mainGbc.gridheight = 1;
         mainGbc.weighty = 0.1f;
-        mainGbc.fill = GridBagConstraints.BOTH;
         JScrollPane pubTagScrollPane = new JScrollPane(m_public.getTagsEditor().getEditorComponent());
         pubTagScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         pubTagScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -197,7 +201,6 @@ public class PlotEntityDetailsDisplay implements EntityDetailsDisplay {
         // --- Public Editor Component
         mainGbc.gridy = 5;
         mainGbc.weighty = 1.0f;
-        mainGbc.fill = GridBagConstraints.BOTH;
         JScrollPane relationShipScrollPane = new JScrollPane(m_relationshipEditor.getEditorComponent());
         panel.add(relationShipScrollPane, mainGbc);
 
@@ -205,14 +208,19 @@ public class PlotEntityDetailsDisplay implements EntityDetailsDisplay {
         mainGbc.gridy = 1;
         mainGbc.gridy = 6;
         mainGbc.weighty = 0.0f;
-        mainGbc.gridwidth = 1;
-        mainGbc.gridheight = 1;
         mainGbc.fill = GridBagConstraints.NONE;
         mainGbc.anchor = GridBagConstraints.LAST_LINE_START;
         panel.add(m_relationshipEditor.getAddRelationshipButton(), mainGbc);
 
         // SECOND COLUMN
         //TODO PLOT visualization
+        mainGbc.gridx = 1;
+        mainGbc.gridy = 0;
+        mainGbc.weightx = 1.0f;
+        mainGbc.gridheight = 7;
+        mainGbc.fill = GridBagConstraints.BOTH;
+        m_visualization = new PlotEntityCanvas(m_entityDisplay, m_cdm);
+        panel.add(m_visualization.getComponent(), mainGbc);
 
         return panel;
     }

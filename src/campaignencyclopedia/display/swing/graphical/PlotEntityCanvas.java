@@ -1,9 +1,9 @@
 package campaignencyclopedia.display.swing.graphical;
 
-import campaignencyclopedia.display.RecentHistory;
 import campaignencyclopedia.display.NavigationPath;
 import campaignencyclopedia.data.DataAccessor;
 import campaignencyclopedia.data.Entity;
+import campaignencyclopedia.data.EntityType.EntityDomain;
 import campaignencyclopedia.data.Relationship;
 import campaignencyclopedia.data.RelationshipManager;
 import campaignencyclopedia.data.TimelineEntry;
@@ -33,10 +33,11 @@ import java.util.UUID;
 import javax.swing.JComponent;
 
 /**
- * A custom component that implements CanvasDisplay for displaying an entity and its adjacent relationships.
+ * A custom component that implements CanvasDisplay, specifically for displaying plot-related 
+ * entities and the relevant relationships.
  * @author adam
  */
-public class OrbitalEntityCanvas extends JComponent implements CanvasDisplay  {
+public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
 
     // RENDERING VALUES
     private static final int DOT_LINE_LENGTH = 225;
@@ -79,27 +80,21 @@ public class OrbitalEntityCanvas extends JComponent implements CanvasDisplay  {
      * Creates a new instance of Orbital Entity Canvas.
      * @param display an entity display to show Entity data on.
      * @param accessor a data accessor to fetch Entity data from.
-     * @param initialId the ID of the initial Entity to show.
      */
-    public OrbitalEntityCanvas(EntityDisplay display, DataAccessor accessor, UUID initialId) {
-        if (initialId == null) {
-            throw new IllegalArgumentException("Parameter 'initialId' cannot be null.");
-        }
+    public PlotEntityCanvas(EntityDisplay display, DataAccessor accessor) {
         if (display == null) {
             throw new IllegalArgumentException("Parameter 'initialId' cannot be null.");
         }
         m_accessor = accessor;
         m_display = display;
-        m_path = new NavigationPath(initialId);
         m_renderingConfigMap = new HashMap<>();
-
+        
         initializeMouseListener();
-
-        show(m_accessor.getEntity(initialId));
     }
 
     public final void show(Entity entity) {
         m_currentEntity = entity.getId();
+        m_path = new NavigationPath(entity.getId());
         repaint();
     }
 
@@ -129,6 +124,7 @@ public class OrbitalEntityCanvas extends JComponent implements CanvasDisplay  {
 
                 Set<UUID> uniqueIds = new HashSet<>();
                 for (Relationship rel : relationships) {
+                    //Get the IDs of the related entities we care about.
                     uniqueIds.add(rel.getRelatedEntity());
                 }
                 int relationshipCount = uniqueIds.size();
@@ -141,17 +137,25 @@ public class OrbitalEntityCanvas extends JComponent implements CanvasDisplay  {
                 // Repopulate the location map.
                 float currentAngle = 0;
                 for (UUID id : uniqueIds) {
+                    Entity relatedTo = m_accessor.getEntity(id);
+                    if (relatedTo.getType().getDomain() != EntityDomain.PLOT) {
+                        //If it isn't a plot entity, we don't care.
+                        continue;
+                    }
+                    
                     RenderingConfig config = new RenderingConfig();
                     config.dotPoint = getPoint(center, currentAngle, getDotLineLength());
                     config.textPoint = getPoint(center, currentAngle, getTextLineLength());
+                    config.entity = relatedTo;
                     m_renderingConfigMap.put(id, config);
                     currentAngle += angle;
                 }
 
                 // Draw all of the lines and their relationship dots
                 for (UUID id : m_renderingConfigMap.keySet()) {
-                    Entity relatedTo = m_accessor.getEntity(id);
                     RenderingConfig rf = m_renderingConfigMap.get(id);
+//                    Entity relatedTo = m_accessor.getEntity(id);
+                    Entity relatedTo = rf.entity;
                     if (relatedTo != null) {
                         // Lines first
                         g2.setPaint(Colors.LINE);
@@ -268,44 +272,44 @@ public class OrbitalEntityCanvas extends JComponent implements CanvasDisplay  {
             g2.drawString("No Data", this.getWidth() / 2, this.getHeight() / 2);
         }
 
-        // Render BACK / FWD Buttons
-        g2.setFont(originalFont);
-        g2.setPaint(Color.WHITE);
-        g2.fill(BACK_BUTTON);
-        g2.setPaint(Color.BLACK);
-        g2.draw(BACK_BUTTON);
-        if (!m_path.isBackPossible()) {
-            g2.setPaint(Color.GRAY);
-        }
-        g2.drawString("Back", 10.0f, 15.0f);
-
-        g2.setPaint(Color.WHITE);
-        g2.fill(FWD_BUTTON);
-        g2.setPaint(Color.BLACK);
-        g2.draw(FWD_BUTTON);
-        if (!m_path.isForwardPossible()) {
-            g2.setPaint(Color.GRAY);
-        }
-        g2.drawString("Fwd", 50.0f, 15.0f);
-
-        // Render Navigation History
-        RecentHistory recentHistory = m_path.getRecentHistory();
-        g2.setFont(boldFont);
-        g2.setPaint(Color.BLACK);
-        float historyYpos = 20.0f + (recentHistory.getRecentHistory().size() * orignalFontMetrics.getHeight());
-        for (int i = 0; i < recentHistory.getRecentHistory().size(); i++) {
-            String name = m_accessor.getEntity(recentHistory.getRecentHistory().get(i)).getName();
-            if (i == recentHistory.getCurrentIndex()) {
-                g2.setFont(boldFont);
-                g2.drawString(name, PAD, historyYpos);
-                historyYpos = historyYpos - g2.getFontMetrics().getHeight();
-            } else {
-                g2.setPaint(Color.BLACK);
-                g2.setFont(originalFont);
-                g2.drawString(name, PAD, historyYpos);
-                historyYpos = historyYpos - g2.getFontMetrics().getHeight();
-            }
-        }
+//        // Re BACK / FWD Buttons
+//        g2.setFont(originalFont);
+//        g2.setPaint(Color.WHITE);
+//        g2.fill(BACK_BUTTON);
+//        g2.setPaint(Color.BLACK);
+//        g2.draw(BACK_BUTTON);
+//        if (!m_path.isBackPossible()) {
+//            g2.setPaint(Color.GRAY);
+//        }
+//        g2.drawString("Back", 10.0f, 15.0f);
+//
+//        g2.setPaint(Color.WHITE);
+//        g2.fill(FWD_BUTTON);
+//        g2.setPaint(Color.BLACK);
+//        g2.draw(FWD_BUTTON);
+//        if (!m_path.isForwardPossible()) {
+//            g2.setPaint(Color.GRAY);
+//        }
+//        g2.drawString("Fwd", 50.0f, 15.0f);
+//
+//        // Render Navigation History
+//        RecentHistory recentHistory = m_path.getRecentHistory();
+//        g2.setFont(boldFont);
+//        g2.setPaint(Color.BLACK);
+//        float historyYpos = 20.0f + (recentHistory.getRecentHistory().size() * orignalFontMetrics.getHeight());
+//        for (int i = 0; i < recentHistory.getRecentHistory().size(); i++) {
+//            String name = m_accessor.getEntity(recentHistory.getRecentHistory().get(i)).getName();
+//            if (i == recentHistory.getCurrentIndex()) {
+//                g2.setFont(boldFont);
+//                g2.drawString(name, PAD, historyYpos);
+//                historyYpos = historyYpos - g2.getFontMetrics().getHeight();
+//            } else {
+//                g2.setPaint(Color.BLACK);
+//                g2.setFont(originalFont);
+//                g2.drawString(name, PAD, historyYpos);
+//                historyYpos = historyYpos - g2.getFontMetrics().getHeight();
+//            }
+//        }
     }
 
     private Point2D.Double getPoint(Point2D.Double center, double angle, double distance) {
@@ -440,5 +444,6 @@ public class OrbitalEntityCanvas extends JComponent implements CanvasDisplay  {
         private Point2D.Double dotPoint;
         private Point2D.Double textPoint;
         private Shape dot;
+        private Entity entity;  //Store entity to prevent double lookups during repaint
     }
 }
