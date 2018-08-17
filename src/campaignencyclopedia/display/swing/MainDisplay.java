@@ -361,7 +361,7 @@ public class MainDisplay implements EditListener, UserDisplay {
         m_frame.setVisible(true);
         
         //Now that the frame is visible, set the split divider location to a reasonable size
-        m_entitySplitPane.setDividerLocation(0.20);
+        m_entitySplitPane.setDividerLocation(0.23);
     }
 
     /** Initialize this display's components. */
@@ -404,16 +404,6 @@ public class MainDisplay implements EditListener, UserDisplay {
         // Add entity components in a split pane and create resize listener for the tree/list
         m_entitySplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, entityList, entityDisplay);
         m_entitySplitPane.setDividerSize(7);
-//        //TODO resize split window area with tree expansion?
-//        Jury is out on if this is a good idea or not.  Makes it impossible to move split pane divider yourself.
-//        m_entityTreeComponent.addComponentListener(new ComponentAdapter() {
-//            @Override
-//            public void componentResized(ComponentEvent e) {
-//                super.componentResized(e);
-//                m_entitySplitPane.resetToPreferredSizes();
-//            }
-//        });
-        
         panel.add(m_entitySplitPane, BorderLayout.CENTER);
         
         // Create and set main menu

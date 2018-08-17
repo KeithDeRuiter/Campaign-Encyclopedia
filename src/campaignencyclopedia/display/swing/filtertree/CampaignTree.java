@@ -95,11 +95,6 @@ public class CampaignTree {
                 if (node.isRoot()) {
                     throw new ExpandVetoException(event);
                 }
-                
-//                //Don't allow collapse of domain nodes  //TODO determine if we should force domain nodes open?
-//                if (node.getUserObject() instanceof EntityDomain) {
-//                    throw new ExpandVetoException(event);
-//                }
             }
         });
         
