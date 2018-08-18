@@ -27,13 +27,27 @@ public class NavigationPath {
     /** The maximum number of items that can be in the navigation history. */
     private static final int MAX_HISTORY_SIZE = 100;
 
+    /**
+     * Constructs a new empty NavigationPath.
+     */
+    public NavigationPath() {
+        this(null);
+    }
+    
+    /**
+     * Constructs a new NavigationPath, starting with the provided ID.
+     * Passing null will create an empty path with the cursor set at -1, requiring an ID
+     * to be added before the path can begin.
+     * @param start The ID to start the path at.  {@code null} is allowed, resulting in an empty path.
+     */
     public NavigationPath(UUID start) {
-        if (start == null) {
-            throw new IllegalArgumentException("Supplied starting UUID is null.");
-        }
         m_history = new ArrayList<>();
-        m_history.add(start);
-        m_cursor = 0;
+        if (start == null) {
+            m_cursor = -1;
+        } else {
+            m_history.add(start);
+            m_cursor = 0;
+        }
     }
 
     public void add(UUID navigateTo) {
@@ -67,7 +81,6 @@ public class NavigationPath {
             m_cursor++;
             return true;
         }
-
         return false;
     }
 
@@ -89,7 +102,6 @@ public class NavigationPath {
             m_cursor--;
             return true;
         }
-
         return false;
     }
 
@@ -109,7 +121,13 @@ public class NavigationPath {
         if (m_history.isEmpty()) {
             return null;
         }
-        return m_history.get(m_cursor);
+        try {
+            return m_history.get(m_cursor);
+        } catch (IndexOutOfBoundsException e) {
+            //We somehow got out of the range of the list, so treat is the same as if we were empty.
+            //Unlikely, since the tracking is internal and isEmpty is already covered.
+            return null;
+        }
     }
 
     /**
@@ -131,6 +149,7 @@ public class NavigationPath {
         // Check forwards
         ListIterator<UUID> iter = m_history.listIterator(m_cursor);
         int forwardAdds = 0;
+        //Start at element specified by cursor, and then cursor +1 etc.
         while (iter.hasNext() && forwardAdds <= MAX_FORWARD_ELEMENTS) {
             history.add(iter.next());
             forwardAdds++;
@@ -138,6 +157,7 @@ public class NavigationPath {
 
         // Check backwards
         iter = m_history.listIterator(m_cursor);
+        //Start at element specified by cursor -1, and then cursor -2 etc.
         while (iter.hasPrevious() && history.size() <= MAX_BACKWARD_ELEMENTS) {
             history.add(0, iter.previous());
             curentPosition++;
@@ -147,8 +167,8 @@ public class NavigationPath {
     }
 
     /**
-     * Returns an unmodifiable copy of the history.
-     * @return an unmodifiable copy of the history.
+     * Returns an unmodifiable copy of the complete history list.
+     * @return an unmodifiable copy of the complete history list.
      */
     public List<UUID> getHistory() {
         return Collections.unmodifiableList(m_history);
@@ -167,5 +187,13 @@ public class NavigationPath {
             }
             m_history.remove(id);
         }
+    }
+    
+    /**
+     * Clears the data in this path, removing all history and elements.
+     */
+    public void clear() {
+        m_cursor = -1;
+        m_history.clear();
     }
 }

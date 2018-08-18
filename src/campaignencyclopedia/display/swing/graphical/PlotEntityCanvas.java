@@ -154,7 +154,6 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                 // Draw all of the lines and their relationship dots
                 for (UUID id : m_renderingConfigMap.keySet()) {
                     RenderingConfig rf = m_renderingConfigMap.get(id);
-//                    Entity relatedTo = m_accessor.getEntity(id);
                     Entity relatedTo = rf.entity;
                     if (relatedTo != null) {
                         // Lines first
@@ -436,7 +435,9 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
 
     @Override
     public void clearAllData() {
-        // Do nothing.
+        m_currentEntity = null;
+        m_hoveredEntity = null;
+        repaint();
     }
 
     /** A data bag for holding the locations calculated for rendering data. */

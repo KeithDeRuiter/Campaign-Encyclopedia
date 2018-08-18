@@ -821,7 +821,8 @@ public class MainDisplay implements EditListener, UserDisplay {
             if (m_navPath == null) {
                 m_navPath = new NavigationPath(id);
             } else {
-                UUID currentId = m_navPath.getCurrentId();  //Protect against empty list
+                UUID currentId = m_navPath.getCurrentId();
+                //Protect against empty list, if there was nothing already or current is different
                 if (currentId == null || !currentId.equals(id)) {
                     m_navPath.add(id);
                 }
