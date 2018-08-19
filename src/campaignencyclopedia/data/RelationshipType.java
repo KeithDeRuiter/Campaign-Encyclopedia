@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The types of Relationships that Entities can have with one another.
+ * The default types of Relationships that Entities can have with one another.
  * @author adam
  */
 public enum RelationshipType implements Displayable {
@@ -43,6 +43,8 @@ public enum RelationshipType implements Displayable {
     KILLED("Killed"),
     KILLED_BY("Killed by"),
     MOTHER_OF("Mother of"),
+    LEADS_TO("Leads to"),
+    LEARN_OF("Learn of"),
     LIVES_IN("Lives in"),
     LOVES("Loves"),
     MARRIED_TO("Married to"),

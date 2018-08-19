@@ -213,13 +213,13 @@ public class PlotEntityDetailsDisplay implements EntityDetailsDisplay {
         panel.add(m_relationshipEditor.getAddRelationshipButton(), mainGbc);
 
         // SECOND COLUMN
-        //TODO PLOT visualization
         mainGbc.gridx = 1;
         mainGbc.gridy = 0;
         mainGbc.weightx = 1.0f;
         mainGbc.gridheight = 7;
         mainGbc.fill = GridBagConstraints.BOTH;
         m_visualization = new PlotEntityCanvas(m_entityDisplay, m_cdm);
+        m_cdm.addListener(m_visualization);
         panel.add(m_visualization.getComponent(), mainGbc);
 
         return panel;

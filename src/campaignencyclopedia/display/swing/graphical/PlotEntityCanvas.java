@@ -3,9 +3,10 @@ package campaignencyclopedia.display.swing.graphical;
 import campaignencyclopedia.display.NavigationPath;
 import campaignencyclopedia.data.DataAccessor;
 import campaignencyclopedia.data.Entity;
-import campaignencyclopedia.data.EntityType.EntityDomain;
+import campaignencyclopedia.data.EntityType;
 import campaignencyclopedia.data.Relationship;
 import campaignencyclopedia.data.RelationshipManager;
+import campaignencyclopedia.data.RelationshipType;
 import campaignencyclopedia.data.TimelineEntry;
 import campaignencyclopedia.display.EntityDisplay;
 import java.awt.BasicStroke;
@@ -24,10 +25,9 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import javax.swing.JComponent;
@@ -54,13 +54,13 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
     private NavigationPath m_path;
 
     /** The map of Entity IDs to rendering configuration objects.  Used to both render and handle user mouse interaction. */
-    private final Map<UUID, RenderingConfig> m_renderingConfigMap;
+    private final Set<RenderingConfig> m_renderingConfigs;
 
     /** The shapes rendered for the current entity. Used to determine if the user has selected to edit this Entity. */
     private Shape m_currentEntityShape;
 
     /** Current Entity */
-    private UUID m_currentEntity;
+    private UUID m_currentEntityId;
 
     /** The currently hovered over entity. */
     private UUID m_hoveredEntity;
@@ -87,13 +87,13 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
         }
         m_accessor = accessor;
         m_display = display;
-        m_renderingConfigMap = new HashMap<>();
+        m_renderingConfigs = new HashSet<>();
         
         initializeMouseListener();
     }
 
     public final void show(Entity entity) {
-        m_currentEntity = entity.getId();
+        m_currentEntityId = entity.getId();
         m_path = new NavigationPath(entity.getId());
         repaint();
     }
@@ -110,69 +110,146 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
         Font boldFont = originalFont.deriveFont(Font.BOLD);
 
         // RENDER ENTITY
-        if (m_currentEntity != null) {
-            Entity current = m_accessor.getEntity(m_currentEntity);
-            if (current != null) {
-
-
+        if (m_currentEntityId != null) {
+            Entity currentEntity = m_accessor.getEntity(m_currentEntityId);
+            if (currentEntity != null) {
                 // Clear the location map
-                m_renderingConfigMap.clear();
+                m_renderingConfigs.clear();
+
 
                 // Fetch some required values
-                RelationshipManager currentRelMgr = m_accessor.getRelationshipsForEntity(m_currentEntity);
+                RelationshipManager currentRelMgr = m_accessor.getRelationshipsForEntity(m_currentEntityId);
                 Set<Relationship> relationships = new HashSet<>(currentRelMgr.getAllRelationships());
 
-                Set<UUID> uniqueIds = new HashSet<>();
-                for (Relationship rel : relationships) {
-                    //Get the IDs of the related entities we care about.
-                    uniqueIds.add(rel.getRelatedEntity());
+//                Set<UUID> uniqueIds = new HashSet<>();
+//                List<Entity> relatedEntities = new ArrayList<>();
+//                for (Relationship rel : relationships) {
+//                    //Get the IDs of the related entities we care about.
+//                    uniqueIds.add(rel.getRelatedEntity());
+//                    relatedEntities.add(m_accessor.getEntity(rel.getRelatedEntity()));
+//                }
+//                int relationshipCount = uniqueIds.size();
+                
+                
+                //Sort out what goes where based on type and relationships
+                Entity sideWorldConnection = null;
+                List<Entity> topConnections = new ArrayList<>();
+                List<Entity> bottomConnections = new ArrayList<>();
+                
+                //TODO make this ALL more robust w.r.t. relationship types/text/names/etc
+                if (currentEntity.getType() == EntityType.PLOT_LEAD) {
+                    //If this is a lead, then get the *plot point* nodes it leads to, and the node(s) it is found at
+                    
+                    for (Relationship r : relationships) {
+                        Entity otherEntity = m_accessor.getEntity(r.getRelatedEntity());
+                        //For rendering leads, we only care about connected points
+                        if (otherEntity.getType() != EntityType.PLOT_POINT) {
+                            continue;
+                        }
+                        
+                        if (r.getRelationshipText().equals(RelationshipType.LEADS_TO.getDisplayString())) {
+                            //Found a thing that this lead leads to, put it 'on top'
+                            topConnections.add(otherEntity);
+                        } else if (r.getRelationshipText().equals(RelationshipType.LEARN_OF.getDisplayString())) {
+                            //TODO this only works pending a 2-way relationship queary
+                            //Found a thing which reveals this lead, put it 'on bottom'
+                            bottomConnections.add(otherEntity);
+                        }
+                    }
+                    
+                } else if (currentEntity.getType() == EntityType.PLOT_POINT) {
+                    //If this is a plot point, then get the *leads* leading to here and the leads found here
+                    
+                    for (Relationship r : relationships) {
+                        Entity otherEntity = m_accessor.getEntity(r.getRelatedEntity());
+                        //For rendering plot points, we only care about connected leads
+                        if (otherEntity.getType() != EntityType.PLOT_LEAD) {
+                            continue;
+                        }
+                        
+                        if (r.getRelationshipText().equals(RelationshipType.LEARN_OF.getDisplayString())) {
+                            //Find leads that are learned about based on this plot point and put them 'on top'
+                            topConnections.add(otherEntity);
+                        } else if (r.getRelationshipText().equals(RelationshipType.LEADS_TO.getDisplayString())) {
+                            //Find leads that lead to this plot point and put them 'on bottom'
+                            //TODO this only works pending a 2-way relationship queary
+                            bottomConnections.add(otherEntity);
+                        }
+                    }
+                    
+                } else {
+                    //Something else, just grab all relationships and put them below.  Probably shouldn't happen.
+                    for (Relationship r : relationships) {
+                        bottomConnections.add(m_accessor.getEntity(r.getRelatedEntity()));
+                    }
                 }
-                int relationshipCount = uniqueIds.size();
-
+                
+                //Ensure consistent ordering of items
+                Collections.sort(topConnections);
+                Collections.sort(bottomConnections);
+                
+                /////
+                //TODO remove this once 2-way rels are working
+                List<Entity> comboList = new ArrayList<>();
+                comboList.addAll(topConnections);
+                comboList.addAll(bottomConnections);
+                topConnections = comboList;
+                bottomConnections = comboList;
+                /////
+                
+                //Grab general rendering values for everything
                 Point2D.Double center = new Point2D.Double(getWidth() / 2, getHeight() / 2);
                 int dotRadius = getDotRadius();
                 int halfDotRadius = getDotRadius() / 2;
-                float angle = 360.0f / relationshipCount;
-
-                // Repopulate the location map.
-                float currentAngle = 0;
-                for (UUID id : uniqueIds) {
-                    Entity relatedTo = m_accessor.getEntity(id);
-                    if (relatedTo.getType().getDomain() != EntityDomain.PLOT) {
-                        //If it isn't a plot entity, we don't care.
-                        continue;
-                    }
-                    
+                float fanWidth = 135.0f;
+                
+                //Populate the top relationships
+                int numTops = topConnections.size();
+                float topAngle = fanWidth / numTops;
+                float currentAngle = 360.0f - ((topAngle + (180.0f - fanWidth)) / 2.0f);  //Top starts at 360, offset by half the spread angle and goes CCW
+                for (Entity e : topConnections) {
                     RenderingConfig config = new RenderingConfig();
                     config.dotPoint = getPoint(center, currentAngle, getDotLineLength());
                     config.textPoint = getPoint(center, currentAngle, getTextLineLength());
-                    config.entity = relatedTo;
-                    m_renderingConfigMap.put(id, config);
-                    currentAngle += angle;
+                    config.entity = e;
+                    m_renderingConfigs.add(config);
+                    currentAngle -= topAngle;  //See getPoint on this class
+                }
+                
+                // Repopulate the bottom location map.
+                int numBottoms = bottomConnections.size();
+                float bottomAngle = fanWidth / numBottoms;
+                currentAngle = 0.0f + ((bottomAngle + (180.0f - fanWidth)) / 2.0f);  //Bottom starts at 0, offset by half the spread angle and goes CW
+                for (Entity e : bottomConnections) {
+                    RenderingConfig config = new RenderingConfig();
+                    config.dotPoint = getPoint(center, currentAngle, getDotLineLength());
+                    config.textPoint = getPoint(center, currentAngle, getTextLineLength());
+                    config.entity = e;
+                    m_renderingConfigs.add(config);
+                    currentAngle += bottomAngle;  //See getPoint on this class
                 }
 
                 // Draw all of the lines and their relationship dots
-                for (UUID id : m_renderingConfigMap.keySet()) {
-                    RenderingConfig rf = m_renderingConfigMap.get(id);
-                    Entity relatedTo = rf.entity;
+                for (RenderingConfig rc : m_renderingConfigs) {
+                    Entity relatedTo = rc.entity;
                     if (relatedTo != null) {
                         // Lines first
                         g2.setPaint(Colors.LINE);
-                        g2.draw(new Line2D.Double(center.x, center.y, rf.dotPoint.x, rf.dotPoint.y));
+                        g2.draw(new Line2D.Double(center.x, center.y, rc.dotPoint.x, rc.dotPoint.y));
 
                         // Then Dots
                         g2.setPaint(Colors.getColor(relatedTo.getType()));
-                        rf.dot = new Ellipse2D.Double(rf.dotPoint.x - halfDotRadius, rf.dotPoint.y - halfDotRadius, dotRadius, dotRadius);
-                        g2.fill(rf.dot);
+                        rc.dot = new Ellipse2D.Double(rc.dotPoint.x - halfDotRadius, rc.dotPoint.y - halfDotRadius, dotRadius, dotRadius);
+                        g2.fill(rc.dot);
 
                         // Then Text
                         g2.setPaint(Color.BLACK);
                         double strWidth = orignalFontMetrics.stringWidth(relatedTo.getName());
                         String name = relatedTo.getName();
-                        if (rf.textPoint.x < center.x) {
-                            g2.drawString(name, (float)(rf.textPoint.x - strWidth), (float)rf.textPoint.y);
+                        if (rc.textPoint.x < center.x) {
+                            g2.drawString(name, (float)(rc.textPoint.x - strWidth), (float)rc.textPoint.y);
                         } else {
-                            g2.drawString(name, (float)rf.textPoint.x, (float)rf.textPoint.y);
+                            g2.drawString(name, (float)rc.textPoint.x, (float)rc.textPoint.y);
                         }
                     }
                 }
@@ -181,7 +258,7 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                 // --- Gather needed values
 
                 // --- DOT
-                g2.setPaint(Colors.getColor(current.getType()));
+                g2.setPaint(Colors.getColor(currentEntity.getType()));
                 m_currentEntityShape = new Ellipse2D.Double(center.x - dotRadius, center.y - dotRadius, dotRadius * 2, dotRadius * 2);
                 g2.fill(m_currentEntityShape);
 
@@ -192,8 +269,8 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                 g2.setPaint(Color.WHITE);
                 int licensePlateWidth = dotRadius * 3;
                 boolean licensePlateUsedMinWidth = true;
-                if (bigFontMetrics.stringWidth(current.getName()) > licensePlateWidth) {
-                    licensePlateWidth = bigFontMetrics.stringWidth(current.getName());
+                if (bigFontMetrics.stringWidth(currentEntity.getName()) > licensePlateWidth) {
+                    licensePlateWidth = bigFontMetrics.stringWidth(currentEntity.getName());
                     licensePlateUsedMinWidth = false;
                 }
                 int licensePlateHeight = bigFontMetrics.getHeight();
@@ -210,9 +287,9 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                 float primaryEntityNameX = (float)center.x - (licensePlateWidth / 2);
                 float primaryEntityNameY = (float)center.y + (licensePlateHeight / 2) + 1;
                 if (licensePlateUsedMinWidth) {
-                    primaryEntityNameX += (licensePlateWidth - bigFontMetrics.stringWidth(current.getName())) / 2.0f;
+                    primaryEntityNameX += (licensePlateWidth - bigFontMetrics.stringWidth(currentEntity.getName())) / 2.0f;
                 }
-                g2.drawString(current.getName(), primaryEntityNameX, primaryEntityNameY - PAD);
+                g2.drawString(currentEntity.getName(), primaryEntityNameX, primaryEntityNameY - PAD);
 
 
                 // RENDER RELATIONSHIP HOVER DATA (IF VALID TO DO SO)
@@ -265,7 +342,7 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                     }
                 }
             } else {
-                m_currentEntity = null;
+                m_currentEntityId = null;
             }
         } else {
             g2.drawString("No Data", this.getWidth() / 2, this.getHeight() / 2);
@@ -311,6 +388,15 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
 //        }
     }
 
+    /**
+     * Generates a new point that is {@code distance} units away from {@code center} at {@code angle}
+     * The angle is measured clockwise from 3 o'clock, so 0 degrees is directly right, 90 degrees
+     * is straight down, etc.
+     * @param center The center point to project out from.
+     * @param angle The angle, in degrees.
+     * @param distance The distance away to generate a point at.
+     * @return A new point the stated distance and direction away from the specified 'center'
+     */
     private Point2D.Double getPoint(Point2D.Double center, double angle, double distance) {
         // Angles in java are measured clockwise from 3 o'clock.
         double theta = Math.toRadians(angle);
@@ -345,16 +431,16 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                     if (m_path.forward()) {
                         show(m_accessor.getEntity(m_path.getCurrentId()));
                     }
-                } else if (m_currentEntity != null &&
+                } else if (m_currentEntityId != null &&
                            m_currentEntityShape != null &&
                            m_currentEntityShape.contains(click)) {
                     if (me.isControlDown()) {
-                        m_display.showEntity(m_currentEntity);
+                        m_display.showEntity(m_currentEntityId);
                     }
                 } else {
-                    for (UUID id : m_renderingConfigMap.keySet()) {
-                        RenderingConfig rc = m_renderingConfigMap.get(id);
+                    for (RenderingConfig rc : m_renderingConfigs) {
                         if (rc.dot.contains(me.getPoint())) {
+                            UUID id = rc.entity.getId();
                             if (me.isControlDown()) {
                                 m_display.showEntity(id);
                             } else {
@@ -378,11 +464,10 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
 
                 // Find out if we're hovering over a given entity.
                 boolean found = false;
-                for (UUID id : m_renderingConfigMap.keySet()) {
-                    RenderingConfig rc = m_renderingConfigMap.get(id);
+                for (RenderingConfig rc : m_renderingConfigs) {
                     if (rc.dot.contains(me.getPoint())) {
                         found = true;
-                        m_hoveredEntity = id;
+                        m_hoveredEntity = rc.entity.getId();
                         m_hoverPoint = new Point2D.Double(me.getX(), me.getY());
                         repaint();
                         break;
@@ -402,8 +487,8 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
     /** {@inheritDoc} */
     @Override
     public void dataRemoved(UUID id) {
-        if (id.equals(m_currentEntity)) {
-            m_currentEntity = null;
+        if (id.equals(m_currentEntityId)) {
+            m_currentEntityId = null;
             m_hoveredEntity = null;
         } else if (id.equals(m_hoveredEntity)) {
             m_hoveredEntity = null;
@@ -435,7 +520,7 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
 
     @Override
     public void clearAllData() {
-        m_currentEntity = null;
+        m_currentEntityId = null;
         m_hoveredEntity = null;
         repaint();
     }
