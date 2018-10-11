@@ -164,6 +164,10 @@ public class SortableListModel<E extends Comparable<E>> extends AbstractListMode
         fireIntervalRemoved(this, 0, size);
     }
 
+    /**
+     * Removes the provided element from the list.  If the element is not in the list, then no action is taken.
+     * @param e The element to remove.
+     */
     public void removeElement(E e) {
         // If the filter is set, update the filtered list.
         if (m_filter != null) {
@@ -172,7 +176,9 @@ public class SortableListModel<E extends Comparable<E>> extends AbstractListMode
                 m_filteredItems.remove(e);
                 fireIntervalRemoved(this, index, index);
             }
-            // Also maintain the 'real' data map.
+            // Also maintain the 'real' data map behind the scenes.
+            //NOTE: doesn't need a fire remove event because it was either taken care of by the filtered list,
+            //or is not displayed and doesn't matter
             m_items.remove(e);
         } else {
             // If no filter is set, just work over the 'real' data.
