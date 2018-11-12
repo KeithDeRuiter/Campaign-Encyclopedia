@@ -15,7 +15,11 @@ plugins {
 }
 
 // Define the main class for the application
-mainClassName = 'CampaignEncyclopedia'
+mainClassName = 'campaignencyclopedia.CampaignEncyclopedia'
+
+
+// Set our JVM args
+applicationDefaultJvmArgs = ["-Djava.util.logging.config.file=./config/logging.properties"]
 
 dependencies {
     // Use JUnit test framework

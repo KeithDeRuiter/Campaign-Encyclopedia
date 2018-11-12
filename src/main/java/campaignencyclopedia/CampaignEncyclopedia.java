@@ -1,11 +1,14 @@
 package campaignencyclopedia;
 
-import campaignencyclopedia.data.CampaignDataManager;
-import campaignencyclopedia.display.swing.MainDisplay;
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+
+import campaignencyclopedia.data.CampaignDataManager;
+import campaignencyclopedia.display.swing.MainDisplay;
 
 /**
  * The main class of the Campaign Encyclopedia.
@@ -15,7 +18,11 @@ public class CampaignEncyclopedia {
 
     // Set up logging.
     static {
-        System.setProperty("java.util.logging.config.file", "./config/logging.properties");
+        // File f = new File("./config/logging.properties");
+        // System.out.println("Exists: " + f.exists());
+        // f = new File(".");
+        // System.out.println(". path: " + f.getAbsolutePath());
+        // System.setProperty("java.util.logging.config.file", "./config/logging.properties");
     }
 
     /** A Logger. */
@@ -26,6 +33,7 @@ public class CampaignEncyclopedia {
      * @param args the command line arguments (ignored)
      */
     public static void main(String[] args) {
+        LOGGER.info("App Starting!");
         swingMain(args);
     }
 
