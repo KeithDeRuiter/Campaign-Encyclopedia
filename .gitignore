@@ -26,7 +26,11 @@ local.properties
 .settings/
 .loadpath
 .recommenders
+.project
+.classpath
 
+### VS Code?
+.vscode
 
 ### Gradle ###
 .gradle
