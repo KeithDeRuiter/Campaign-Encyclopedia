@@ -89,9 +89,9 @@ public class PlotEntityRelationshipEditor {
 
     private Frame m_parent;
 
-    private static final String POINT_OUT_LABEL = "Learn Of";
+    private static final String POINT_OUT_LABEL = RelationshipType.LEARN_OF.getDisplayString();
     private static final String POINT_IN_LABEL = "Revealed By";
-    private static final String LEAD_OUT_LABEL = "Leads To";
+    private static final String LEAD_OUT_LABEL = RelationshipType.LEADS_TO.getDisplayString();
     private static final String LEAD_IN_LABEL = "Discovered At";
     
     
@@ -383,7 +383,7 @@ public class PlotEntityRelationshipEditor {
     public void addRelationship(Relationship rel) {
         m_originalRelationshipSet.add(rel);
         
-        if (rel.getRelationshipText().equals(RelationshipType.LEADS_TO.toString())) {
+        if (rel.getRelationshipText().equals(RelationshipType.LEADS_TO.getDisplayString())) {
             //If we're at a lead, then Leads to is pointing out to the node this leads leads to
             //Otherwise if we're at a point, then this must be a link pointing to here from a lead
             if (m_currentEntityType == EntityType.PLOT_LEAD) {
@@ -391,7 +391,7 @@ public class PlotEntityRelationshipEditor {
             } else if (m_currentEntityType == EntityType.PLOT_POINT) {
                 m_relsInModel.addElement(rel);
             }
-        } else if (rel.getRelationshipText().equals(RelationshipType.LEARN_OF.toString())) {
+        } else if (rel.getRelationshipText().equals(RelationshipType.LEARN_OF.getDisplayString())) {
             //If we're at a plot point, then we must be pointing out to a lead we learned of here
             //Otherwise if we're at a lead, the learn of rel must be pointing in from the node we learned it at
             if (m_currentEntityType == EntityType.PLOT_POINT) {
