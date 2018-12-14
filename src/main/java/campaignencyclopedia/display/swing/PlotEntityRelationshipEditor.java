@@ -458,6 +458,7 @@ public class PlotEntityRelationshipEditor {
 
     /** Clears the data from this display. */
     void clearData() {
+        m_originalRelationshipSet.clear();
         m_relsInModel.clear();
         m_relsOutModel.clear();
     }
