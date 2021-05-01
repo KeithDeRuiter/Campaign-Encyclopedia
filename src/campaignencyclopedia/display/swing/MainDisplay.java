@@ -339,8 +339,10 @@ public class MainDisplay implements EditListener, UserDisplay {
         if (entity != null) {
             m_displayedEntityId = entity.getId();
             m_entityNameField.setText(entity.getName());
-            m_typeSelector.setSelectedItem(entity.getType());
             m_entityDetails.displayEntityDetails(entity, m_cdm.getRelationshipsForEntity(m_displayedEntityId).getAllRelationships());
+            // Need to reset type selector after setting the entity details itself since type change "repopulates" with "current" data to 
+            // catch a switch of entity/plot panels.  "Current" display therefore needs to be updated first to avoid mismatch.
+            m_typeSelector.setSelectedItem(entity.getType());
             m_secretEntityCheckbox.setSelected(entity.isSecret());
 
             // Update the nav history.

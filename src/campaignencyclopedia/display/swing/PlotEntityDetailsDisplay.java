@@ -12,6 +12,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.swing.JPanel;
@@ -97,8 +99,9 @@ public class PlotEntityDetailsDisplay implements EntityDetailsDisplay {
     public void displayEntityDetails(Entity entity, Set<Relationship> relationships) {
         setPublicData(entity.getPublicData());
         setSecretData(entity.getSecretData());
-        setRelationships(relationships);
+        //Set entity Type before adding relationships so the relationships tables parse in the right mode
         m_relationshipEditor.setCurrentEntityType(entity.getType());
+        setRelationships(relationships);
         m_visualization.show(entity);
     }
     
@@ -135,7 +138,10 @@ public class PlotEntityDetailsDisplay implements EntityDetailsDisplay {
     /** {@inheritDoc} */
     @Override
     public Set<Relationship> getRelationships() {
-        return m_relationshipEditor.getData();
+        //Unmodifiable AND copied for safety to prevent setRelationships(getRelationships()) from clearing 
+        // out its own relationships it is trying to set on itself, thus deleting them unintentionally.
+        // Important for a "reset the same data on yourself" case, namely type selector dropdown
+        return Collections.unmodifiableSet(new HashSet<>(m_relationshipEditor.getData()));
     }
     
     /** 

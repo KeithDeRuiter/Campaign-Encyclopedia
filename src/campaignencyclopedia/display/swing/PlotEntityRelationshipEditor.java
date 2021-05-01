@@ -366,6 +366,7 @@ public class PlotEntityRelationshipEditor {
     public void setData(Set<Relationship> relationships) {
         m_relsInModel.clear();
         m_relsOutModel.clear();
+        m_originalRelationshipSet.clear();
         
         for (Relationship rel : relationships) {
             addRelationship(rel);
@@ -383,7 +384,9 @@ public class PlotEntityRelationshipEditor {
     public void addRelationship(Relationship rel) {
         m_originalRelationshipSet.add(rel);
         
-        if (rel.getRelationshipText().equals(RelationshipType.LEADS_TO.toString())) {
+        // Need to compare display name to rel. string since Relationships don't actually have a static enum list
+        // and the toString includes more info like the UUIDs etc.  Cheap way to compare "type"
+        if (rel.getRelationshipText().equals(RelationshipType.LEADS_TO.getDisplayString())) {
             //If we're at a lead, then Leads to is pointing out to the node this leads leads to
             //Otherwise if we're at a point, then this must be a link pointing to here from a lead
             if (m_currentEntityType == EntityType.PLOT_LEAD) {
@@ -391,7 +394,7 @@ public class PlotEntityRelationshipEditor {
             } else if (m_currentEntityType == EntityType.PLOT_POINT) {
                 m_relsInModel.addElement(rel);
             }
-        } else if (rel.getRelationshipText().equals(RelationshipType.LEARN_OF.toString())) {
+        } else if (rel.getRelationshipText().equals(RelationshipType.LEARN_OF.getDisplayString())) {
             //If we're at a plot point, then we must be pointing out to a lead we learned of here
             //Otherwise if we're at a lead, the learn of rel must be pointing in from the node we learned it at
             if (m_currentEntityType == EntityType.PLOT_POINT) {

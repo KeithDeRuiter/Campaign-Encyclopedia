@@ -11,6 +11,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.swing.JPanel;
@@ -124,7 +126,10 @@ public class DefaultEntityDetailsDisplay implements EntityDetailsDisplay {
     /** {@inheritDoc} */
     @Override
     public Set<Relationship> getRelationships() {
-        return m_relationshipEditor.getData();
+        //Unmodifiable AND copied for safety to prevent setRelationships(getRelationships()) from clearing 
+        // out its own relationships it is trying to set on itself, thus deleting them unintentionally.
+        // Important for a "reset the same data on yourself" case, namely type selector dropdown
+        return Collections.unmodifiableSet(new HashSet<>(m_relationshipEditor.getData()));
     }
     
     /** 
