@@ -7,6 +7,7 @@ import campaignencyclopedia.data.Relationship;
 import campaignencyclopedia.display.EntityDisplay;
 import campaignencyclopedia.display.swing.graphical.PlotEntityCanvas;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -16,6 +17,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import toolbox.display.EditListener;
@@ -170,7 +172,7 @@ public class PlotEntityDetailsDisplay implements EntityDetailsDisplay {
         mainGbc.gridx = 0;
         mainGbc.gridy = 0;
         mainGbc.gridwidth = 2;
-        mainGbc.weightx = 0.2f;
+        mainGbc.weightx = 0.0f;
         mainGbc.insets = insets;
         mainGbc.fill = GridBagConstraints.BOTH;
 
@@ -182,11 +184,13 @@ public class PlotEntityDetailsDisplay implements EntityDetailsDisplay {
 
         // --- Public Description Editor Component
         mainGbc.gridy = 1;
+        mainGbc.weightx = 0.25f;
         mainGbc.weighty = 1.0f;
         JScrollPane publicDescriptionScrollPane = new JScrollPane(m_public.getDescriptionEditor().getDescriptionComponent());
         publicDescriptionScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         publicDescriptionScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         panel.add(publicDescriptionScrollPane, mainGbc);
+        mainGbc.weightx = 0.0f;
 
         // --- Public Tags Label
         mainGbc.gridy = 2;
@@ -209,21 +213,26 @@ public class PlotEntityDetailsDisplay implements EntityDetailsDisplay {
         // --- Add Relationship Toolbar
         mainGbc.gridy = 5;
         mainGbc.weighty = 0.0f;
-        mainGbc.fill = GridBagConstraints.NONE;
-        mainGbc.anchor = GridBagConstraints.LAST_LINE_START;
-        panel.add(m_relationshipEditor.getControlBarComponent(), mainGbc);
+        mainGbc.weightx = 0.25f;
+        mainGbc.fill = GridBagConstraints.BOTH;
+        mainGbc.anchor = GridBagConstraints.NORTHWEST;
+        Component cbc = m_relationshipEditor.getControlBarComponent();
+        cbc.setPreferredSize(new Dimension(2, cbc.getPreferredSize().height));
+        panel.add(cbc, mainGbc);
 
         // --- Relationship Editor Components
         mainGbc.gridwidth = 1;
         mainGbc.gridx = 0;
         mainGbc.gridy = 6;
         mainGbc.weighty = 0.0f;
+        mainGbc.weightx = 0.25f;
         mainGbc.fill = GridBagConstraints.BOTH;
         panel.add(m_relationshipEditor.getInListLabel(), mainGbc);
         
         mainGbc.gridy = 7;
         mainGbc.weighty = 1.0f;
         JScrollPane relationshipInScrollPane = new JScrollPane(m_relationshipEditor.getInListComponent());
+        relationshipInScrollPane.setPreferredSize(new Dimension(2, 2));
         panel.add(relationshipInScrollPane, mainGbc);
         
         mainGbc.gridx = 1;
@@ -234,6 +243,7 @@ public class PlotEntityDetailsDisplay implements EntityDetailsDisplay {
         mainGbc.gridy = 7;
         mainGbc.weighty = 1.0f;
         JScrollPane relationshipOutScrollPane = new JScrollPane(m_relationshipEditor.getOutListComponent());
+        relationshipOutScrollPane.setPreferredSize(new Dimension(2, 2));
         panel.add(relationshipOutScrollPane, mainGbc);
 
         // SECOND COLUMN
@@ -245,7 +255,9 @@ public class PlotEntityDetailsDisplay implements EntityDetailsDisplay {
         mainGbc.fill = GridBagConstraints.BOTH;
         m_visualization = new PlotEntityCanvas(m_entityDisplay, m_cdm);
         m_cdm.addListener(m_visualization);
-        panel.add(m_visualization.getComponent(), mainGbc);
+        JComponent viz = m_visualization.getComponent();
+        viz.setPreferredSize(new Dimension (3, 3));
+        panel.add(viz, mainGbc);
 
         return panel;
     }

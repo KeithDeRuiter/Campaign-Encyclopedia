@@ -6,6 +6,7 @@ import campaignencyclopedia.data.EntityData;
 import campaignencyclopedia.data.Relationship;
 import campaignencyclopedia.display.EntityDisplay;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -167,6 +168,7 @@ public class DefaultEntityDetailsDisplay implements EntityDetailsDisplay {
         mainGbc.fill = GridBagConstraints.BOTH;
         mainGbc.anchor = GridBagConstraints.PAGE_END;
         panel.add(m_public.getDescriptionEditor().getTitle(), mainGbc);
+        mainGbc.weightx = 0.0f;
 
         // --- Public Description Editor Component
         mainGbc.gridy = 1;
@@ -174,6 +176,7 @@ public class DefaultEntityDetailsDisplay implements EntityDetailsDisplay {
         JScrollPane publicDescriptionScrollPane = new JScrollPane(m_public.getDescriptionEditor().getDescriptionComponent());
         publicDescriptionScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         publicDescriptionScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        publicDescriptionScrollPane.setPreferredSize(new Dimension(2, 2));
         panel.add(publicDescriptionScrollPane, mainGbc);
 
         // --- Relationships Label
@@ -187,6 +190,7 @@ public class DefaultEntityDetailsDisplay implements EntityDetailsDisplay {
         mainGbc.weighty = 1.0f;
         mainGbc.fill = GridBagConstraints.BOTH;
         JScrollPane relationShipScrollPane = new JScrollPane(m_relationshipEditor.getEditorComponent());
+        relationShipScrollPane.setPreferredSize(new Dimension(2, 2));
         panel.add(relationShipScrollPane, mainGbc);
 
         // --- Add Relationship Button
@@ -208,6 +212,7 @@ public class DefaultEntityDetailsDisplay implements EntityDetailsDisplay {
         mainGbc.weightx = 1.0f;
         mainGbc.fill = GridBagConstraints.BOTH;
         panel.add(m_secret.getDescriptionEditor().getTitle(), mainGbc);
+        mainGbc.weightx = 0.0f;
 
         // --- Secret Description Editor Component
         mainGbc.gridy = 1;
@@ -215,6 +220,7 @@ public class DefaultEntityDetailsDisplay implements EntityDetailsDisplay {
         JScrollPane secretDescriptionScrollPane = new JScrollPane(m_secret.getDescriptionEditor().getDescriptionComponent());
         secretDescriptionScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         secretDescriptionScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        secretDescriptionScrollPane.setPreferredSize(new Dimension(2, 2));
         panel.add(secretDescriptionScrollPane, mainGbc);
 
         // --- Public Tags Label
@@ -230,6 +236,7 @@ public class DefaultEntityDetailsDisplay implements EntityDetailsDisplay {
         JScrollPane pubTagScrollPane = new JScrollPane(m_public.getTagsEditor().getEditorComponent());
         pubTagScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         pubTagScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        pubTagScrollPane.setPreferredSize(new Dimension(2, 2));
         panel.add(pubTagScrollPane, mainGbc);
 
         // --- Secret Tags Label
@@ -245,6 +252,7 @@ public class DefaultEntityDetailsDisplay implements EntityDetailsDisplay {
         JScrollPane secretTagScrollPane = new JScrollPane(m_secret.getTagsEditor().getEditorComponent());
         secretTagScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         secretTagScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        secretTagScrollPane.setPreferredSize(new Dimension(2, 2));
         panel.add(secretTagScrollPane, mainGbc);
 
         return panel;

@@ -331,6 +331,7 @@ public class PlotEntityRelationshipEditor {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 0.0f;
+        gbc.weighty = 1.0f;
         gbc.insets = insets;
         gbc.fill = GridBagConstraints.BOTH;
         
@@ -339,7 +340,11 @@ public class PlotEntityRelationshipEditor {
         gbc.gridx++;
         m_controlBar.add(m_plotEntityDropdown, gbc);
         gbc.gridx++;
-        m_controlBar.add(m_addPlotConnectionButton);
+        m_controlBar.add(m_addPlotConnectionButton, gbc);
+        //Spacer for the right side... TODO feels like this shouldn't be necessary...
+        gbc.gridx++;
+        gbc.weightx = 1.0f;
+        m_controlBar.add(new JLabel(), gbc);
     }
     
     public void setCurrentEntityType(EntityType type) {

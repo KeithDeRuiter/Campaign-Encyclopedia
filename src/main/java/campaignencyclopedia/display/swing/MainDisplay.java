@@ -377,7 +377,7 @@ public class MainDisplay implements EditListener, UserDisplay {
         m_frame.setVisible(true);
         
         //Now that the frame is visible, set the split divider location to a reasonable size
-        m_entitySplitPane.setDividerLocation(0.23);
+        m_entitySplitPane.setDividerLocation(0.15);
     }
 
     /** Initialize this display's components. */
