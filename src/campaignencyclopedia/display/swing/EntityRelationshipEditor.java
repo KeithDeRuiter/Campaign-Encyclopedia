@@ -127,7 +127,7 @@ public class EntityRelationshipEditor {
         
         // Initialize the JList.
         m_list = new JList<>();
-        m_list.setCellRenderer(new RelationshipCellRenderer(accessor));
+        m_list.setCellRenderer(new DoubleEndedRelationshipCellRenderer(accessor));
         m_list.setModel(m_model);
         m_list.addMouseListener(new MouseAdapter() {
             @Override

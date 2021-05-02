@@ -184,8 +184,10 @@ public class MainDisplay implements EditListener, UserDisplay {
     private void commitDisplayedDataToCdm() {
         // Get shown Entity
         Entity entity = getDisplayedEntity();
+        //Store original relationships as the ones to remove (unless they are still displayed) in order to catch deletes.
+        Set<Relationship> relsToRemove = new HashSet<>(m_cdm.getRelationshipsForEntity(entity.getId()).getAllRelationships());
         
-        // Get Displayed Relationships and add them.
+        // Get Displayed Relationships and add them.  Simultaneously remove them from "orig" list to ctach deletes
         RelationshipManager relMgr = new RelationshipManager();
         for (Relationship rel : m_entityDetails.getRelationships()) {
             // If the entity is secret and it has any public relationships, they must now be secret, so update them.
@@ -194,6 +196,7 @@ public class MainDisplay implements EditListener, UserDisplay {
             } else {
                 relMgr.addRelationship(rel);
             }
+            relsToRemove.remove(rel);
         }
 
         // If the entity is secret:
@@ -202,14 +205,20 @@ public class MainDisplay implements EditListener, UserDisplay {
         if (entity.isSecret()) {
             for (Entity otherEntity : m_cdm.getAllEntities()) {
                 RelationshipManager otherRelMgr = m_cdm.getRelationshipsForEntity(otherEntity.getId());
+                
                 Set<Relationship> requireUpdate = new HashSet<>();
+                Set<Relationship> requireRemove = new HashSet<>();
+                
                 for (Relationship rel : new HashSet<>(otherRelMgr.getPublicRelationships())) {
                     if (!rel.isSecret() && rel.getRelatedEntity().equals(entity.getId())) {
-                        otherRelMgr.remove(rel);
+                        requireRemove.add(rel);
                         requireUpdate.add(new Relationship(rel.getEntityId(), rel.getRelatedEntity(), rel.getRelationshipText(), true));
                     }
                 }
                 // Clear the public data from the relationship manager and add in the newly updated stuff.
+                for (Relationship r : requireRemove) {
+                    m_cdm.removeRelationship(r);
+                }
                 otherRelMgr.addAllRelationships(requireUpdate);
                 m_cdm.addOrUpdateAllRelationships(otherEntity.getId(), otherRelMgr);
             }
@@ -236,6 +245,9 @@ public class MainDisplay implements EditListener, UserDisplay {
         m_cdm.addOrUpdateEntity(entity);
 
         // Add/Update the Relationships
+        for (Relationship r : relsToRemove) {
+            m_cdm.removeRelationship(r);
+        }
         m_cdm.addOrUpdateAllRelationships(entity.getId(), relMgr);
         m_displayedEntityId = entity.getId();
 

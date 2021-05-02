@@ -187,7 +187,7 @@ public class PlotEntityRelationshipEditor {
         
         // Initialize the "IN" JList.
         m_relsInList = new JList<>();
-        m_relsInList.setCellRenderer(new RelationshipCellRenderer(accessor));
+        m_relsInList.setCellRenderer(new DoubleEndedRelationshipCellRenderer(accessor));
         m_relsInList.setModel(m_relsInModel);
         m_relsInList.addMouseListener(new MouseAdapter() {
             @Override
@@ -280,7 +280,7 @@ public class PlotEntityRelationshipEditor {
         
         // Initialize the "OUT" JList.
         m_relsOutList = new JList<>();
-        m_relsOutList.setCellRenderer(new RelationshipCellRenderer(accessor));
+        m_relsOutList.setCellRenderer(new DoubleEndedRelationshipCellRenderer(accessor));
         m_relsOutList.setModel(m_relsOutModel);
         m_relsOutList.addMouseListener(new MouseAdapter() {
             @Override

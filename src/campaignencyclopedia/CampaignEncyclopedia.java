@@ -1,5 +1,6 @@
 package campaignencyclopedia;
 
+import campaignencyclopedia.data.BidirectionalRelationshipCampaignDataManager;
 import campaignencyclopedia.data.CampaignDataManager;
 import campaignencyclopedia.display.swing.MainDisplay;
 import java.util.logging.Level;
@@ -44,7 +45,8 @@ public class CampaignEncyclopedia {
             LOGGER.log(Level.FINER, "Unsupported Look and Feel provided by UIManager.", ex);
         }
 
-        CampaignDataManager cdm = new CampaignDataManager();
+//        CampaignDataManager cdm = new CampaignDataManager();
+        CampaignDataManager cdm = new BidirectionalRelationshipCampaignDataManager();
         MainDisplay display = new MainDisplay(cdm);
         display.launch();
     }

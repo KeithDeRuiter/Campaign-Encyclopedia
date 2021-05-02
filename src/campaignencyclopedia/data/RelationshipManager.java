@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * A manager for relationship data.
@@ -11,8 +12,8 @@ import java.util.Set;
  */
 public class RelationshipManager {
 
-    private final Set<Relationship> m_secret;
-    private final Set<Relationship> m_public;
+    protected final Set<Relationship> m_secret;
+    protected final Set<Relationship> m_public;
 
     /** Creates a new RelationshipManager. */
     public RelationshipManager() {
@@ -20,6 +21,18 @@ public class RelationshipManager {
         m_public = new HashSet<>();
     }
 
+    
+    /**
+     * Copy Constructor, create new relationship sets with the ones provided by the argument passed in.
+     * @param rm Manager to copy.
+     */
+    public RelationshipManager(RelationshipManager rm) {
+        this.m_secret = new HashSet<>(rm.m_secret);
+        this.m_public = new HashSet<>(rm.m_public);
+    }
+
+    
+    
     /**
      * Adds the relationship to the manager.
      * @param rel the Relationship to add.
@@ -87,6 +100,24 @@ public class RelationshipManager {
         Set<Relationship> all = new HashSet<>(m_public);
         all.addAll(m_secret);
         return Collections.unmodifiableSet(all);
+    }
+
+    /**
+     * Returns all the affected entity UUIDs.
+     * @return all the UUIDs from any Relationships in this manager.
+     */
+    public Set<UUID> getAllAffectedIds() {
+        Set<UUID> allIds = new HashSet<>();
+        
+        for (Relationship r : m_public) {
+            allIds.add(r.getEntityId());
+            allIds.add(r.getRelatedEntity());
+        }
+        for (Relationship r : m_secret) {
+            allIds.add(r.getEntityId());
+            allIds.add(r.getRelatedEntity());
+        }
+        return Collections.unmodifiableSet(allIds);
     }
 
     /** Clears all of the data from this manager. */

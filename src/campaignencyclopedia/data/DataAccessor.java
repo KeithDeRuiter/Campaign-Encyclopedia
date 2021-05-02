@@ -63,18 +63,16 @@ public interface DataAccessor {
     public CampaignCalendar getCalendar();
 
     /**
-     * Adds the supplied relationship.
-     * @param entity the UUID of the Entity upon which to place this Relationship.
+     * Adds the supplied Relationship (entity IDs are in the Relationship)
      * @param rel the Relationship to add.
      */
-    public void addRelationship(UUID entity, Relationship rel);
+    public void addRelationship(/**UUID entity,*/ Relationship rel);
 
     /**
-     * Removes the Relationship associated with the supplied ID.
-     * @param entity the UUID of the Entity to remove the Relationship.
-     * @param toRemove the relationship to remove.
+     * Removes the specified Relationship (entity IDs are in the Relationship)
+     * @param toRemove the Relationship to remove.
      */
-    public void removeRelationship(UUID entity, Relationship toRemove);
+    public void removeRelationship(Relationship toRemove);
 
     /**
      * Replaces the RelationshipManager for the supplied entity with the provided one.

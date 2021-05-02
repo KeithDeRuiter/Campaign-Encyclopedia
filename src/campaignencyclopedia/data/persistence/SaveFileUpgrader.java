@@ -3,6 +3,7 @@ package campaignencyclopedia.data.persistence;
 import campaignencyclopedia.data.Campaign;
 import campaignencyclopedia.data.CampaignCalendar;
 import campaignencyclopedia.data.CampaignDataManager;
+import campaignencyclopedia.data.DefaultCampaignDataManager;
 import campaignencyclopedia.data.Entity;
 import campaignencyclopedia.data.EntityData;
 import campaignencyclopedia.data.EntityDataBuilder;
@@ -262,7 +263,7 @@ public class SaveFileUpgrader {
             Campaign converted = upgrade(oldCampaign);
 
             // Create a data accessor.
-            CampaignDataManager cdm = new CampaignDataManager();
+            CampaignDataManager cdm = new DefaultCampaignDataManager();
             cdm.setData(converted);
 
             // Write out translated file.

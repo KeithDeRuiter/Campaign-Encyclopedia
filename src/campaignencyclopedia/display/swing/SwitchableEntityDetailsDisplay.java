@@ -94,6 +94,7 @@ public class SwitchableEntityDetailsDisplay implements EntityDetailsDisplay {
         m_plotDetails.displayEntityDetails(entity, relationships);
         
         if (entity.getType().getDomain().equals(EntityDomain.PLOT)) {
+//        if (true) {
             m_currentDisplay = m_plotDetails;
             m_cards.show(m_component, PLOT_CARD);
         } else {
