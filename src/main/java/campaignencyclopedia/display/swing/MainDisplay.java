@@ -35,6 +35,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -382,8 +384,14 @@ public class MainDisplay implements EditListener, UserDisplay {
     private void initialize() {
         m_frame = new JFrame("Campaign Encyclopedia - " + VERSION);
         try {
-            m_frame.setIconImage(ImageIO.read(new File("./assets/app.png")));
-        } catch (IOException ex) {
+            //Get the resource for the icon
+            URL resource = getClass().getClassLoader().getResource("app.png");
+            if (resource != null) {
+//                m_frame.setIconImage(ImageIO.read(new File("./assets/app.png")));
+                m_frame.setIconImage(ImageIO.read(new File(resource.toURI())));
+            }
+
+        } catch (IOException | URISyntaxException ex) {
             LOGGER.log(Level.CONFIG, "Unable to load application icon.", ex);
         }
         m_frame.setPreferredSize(WINDOW_SIZE);

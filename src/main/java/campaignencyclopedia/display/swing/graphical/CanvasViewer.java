@@ -11,6 +11,8 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -81,8 +83,13 @@ public class CanvasViewer implements CampaignDataManagerListener {
         m_frame.pack();
         DisplayUtilities.positionWindowInDisplayCenter(m_frame, m_size);
         try {
-            m_frame.setIconImage(ImageIO.read(new File("./assets/app.png")));
-        } catch (IOException ex)     {
+            //Get the resource for the icon
+            URL resource = getClass().getClassLoader().getResource("app.png");
+            if (resource != null) {
+//                m_frame.setIconImage(ImageIO.read(new File("./assets/app.png")));
+                m_frame.setIconImage(ImageIO.read(new File(resource.toURI())));
+            }
+        } catch (IOException | URISyntaxException ex)     {
             LOGGER.log(Level.CONFIG, "Unable to load application icon.", ex);
         }
         m_frame.setVisible(true);
