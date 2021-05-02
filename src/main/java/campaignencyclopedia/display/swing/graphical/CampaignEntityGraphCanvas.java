@@ -336,7 +336,9 @@ public class CampaignEntityGraphCanvas extends JComponent implements CanvasDispl
                 //Reset to render tooltip, applying transform to the location point but not actually scaling the tooltip
                 g2.setTransform(saveTransform);
                 Point2D tooltipLocation = new Point2D.Double(m_hoverPointRenderSpace.x, m_hoverPointRenderSpace.y);
-                //transform.transform(tooltipLocation, tooltipLocation);  //Apply transform to the location
+                
+                //TODO I intentionally removed this once... possible DPI/4K/Laptop problem?  Rendered poorly on WIN w/4k so it's back
+                transform.transform(tooltipLocation, tooltipLocation);  //Apply transform to the location
                 
                 String title = hovered.getName() + " - " + RELATIONSHIPS;
                 int maxWidth = g2.getFontMetrics().stringWidth(title);
