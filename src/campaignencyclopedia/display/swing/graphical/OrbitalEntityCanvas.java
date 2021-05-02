@@ -129,7 +129,16 @@ public class OrbitalEntityCanvas extends JComponent implements CanvasDisplay  {
 
                 Set<UUID> uniqueIds = new HashSet<>();
                 for (Relationship rel : relationships) {
-                    uniqueIds.add(rel.getRelatedEntity());
+                    UUID src = rel.getEntityId();
+                    UUID dst = rel.getRelatedEntity();
+                    
+                    //Add in whichever one isn't "us"
+                    if (m_currentEntity.equals(src)) {
+                        uniqueIds.add(dst);
+                    } else {
+                        uniqueIds.add(src);
+                    }
+                    
                 }
                 int relationshipCount = uniqueIds.size();
 
@@ -220,8 +229,8 @@ public class OrbitalEntityCanvas extends JComponent implements CanvasDisplay  {
                         List<String> hoverRelationships = new ArrayList<>();
                         hoverRelationships.add(RELATIONSHIPS);
                         for (Relationship rel : currentRelMgr.getPublicRelationships()) {
-                            if (rel.getRelatedEntity().equals(m_hoveredEntity)) {
-                                String line = "\n  - " + rel.getRelationshipText() + " " + m_accessor.getEntity(rel.getRelatedEntity()).getName();
+                            if (rel.getRelatedEntity().equals(m_hoveredEntity) || rel.getEntityId().equals(m_hoveredEntity)) {
+                                String line = "\n  - " + m_accessor.getEntity(rel.getEntityId()).getName() + " " + rel.getRelationshipText() + " " + m_accessor.getEntity(rel.getRelatedEntity()).getName();
                                 hoverRelationships.add(line);
                                 int stringWidth = orignalFontMetrics.stringWidth(line);
                                 if (maxWidth < stringWidth) {
@@ -230,8 +239,8 @@ public class OrbitalEntityCanvas extends JComponent implements CanvasDisplay  {
                             }
                         }
                         for (Relationship rel : currentRelMgr.getSecretRelationships()) {
-                            if (rel.getRelatedEntity().equals(m_hoveredEntity)) {
-                                String line = "\n  - " + rel.getRelationshipText() + " " + m_accessor.getEntity(rel.getRelatedEntity()).getName() + " (Secret)";
+                            if (rel.getRelatedEntity().equals(m_hoveredEntity) || rel.getEntityId().equals(m_hoveredEntity)) {
+                                String line = "\n  - " + m_accessor.getEntity(rel.getEntityId()).getName() + " " + rel.getRelationshipText() + " " + m_accessor.getEntity(rel.getRelatedEntity()).getName() + " (Secret)";
                                 hoverRelationships.add(line);
                                 int stringWidth = orignalFontMetrics.stringWidth(line);
                                 if (maxWidth < stringWidth) {
