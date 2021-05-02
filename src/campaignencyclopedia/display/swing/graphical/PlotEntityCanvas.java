@@ -141,19 +141,20 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                     //If this is a lead, then get the *plot point* nodes it leads to, and the node(s) it is found at
                     
                     for (Relationship r : relationships) {
-                        Entity otherEntity = m_accessor.getEntity(r.getRelatedEntity());
+                        Entity dstEntity = m_accessor.getEntity(r.getRelatedEntity());
+                        Entity srcEntity = m_accessor.getEntity(r.getEntityId());
                         //For rendering leads, we only care about connected points
-                        if (otherEntity.getType() != EntityType.PLOT_POINT) {
+                        if (dstEntity.getType() != EntityType.PLOT_POINT && srcEntity.getType() != EntityType.PLOT_POINT) {
                             continue;
                         }
                         
                         if (r.getRelationshipText().equals(RelationshipType.LEADS_TO.getDisplayString())) {
                             //Found a thing that this lead leads to, put it 'on top'
-                            topConnections.add(otherEntity);
+                            topConnections.add(dstEntity);
                         } else if (r.getRelationshipText().equals(RelationshipType.LEARN_OF.getDisplayString())) {
                             //TODO this only works pending a 2-way relationship queary
                             //Found a thing which reveals this lead, put it 'on bottom'
-                            bottomConnections.add(otherEntity);
+                            bottomConnections.add(srcEntity);
                         }
                     }
                     
@@ -161,19 +162,20 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                     //If this is a plot point, then get the *leads* leading to here and the leads found here
                     
                     for (Relationship r : relationships) {
-                        Entity otherEntity = m_accessor.getEntity(r.getRelatedEntity());
+                        Entity dstEntity = m_accessor.getEntity(r.getRelatedEntity());
+                        Entity srcEntity = m_accessor.getEntity(r.getEntityId());
                         //For rendering plot points, we only care about connected leads
-                        if (otherEntity.getType() != EntityType.PLOT_LEAD) {
+                        if (dstEntity.getType() != EntityType.PLOT_LEAD && srcEntity.getType() != EntityType.PLOT_LEAD) {
                             continue;
                         }
                         
                         if (r.getRelationshipText().equals(RelationshipType.LEARN_OF.getDisplayString())) {
                             //Find leads that are learned about based on this plot point and put them 'on top'
-                            topConnections.add(otherEntity);
+                            topConnections.add(dstEntity);
                         } else if (r.getRelationshipText().equals(RelationshipType.LEADS_TO.getDisplayString())) {
                             //Find leads that lead to this plot point and put them 'on bottom'
                             //TODO this only works pending a 2-way relationship queary
-                            bottomConnections.add(otherEntity);
+                            bottomConnections.add(srcEntity);
                         }
                     }
                     
@@ -187,15 +189,7 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                 //Ensure consistent ordering of items
                 Collections.sort(topConnections);
                 Collections.sort(bottomConnections);
-                
-                /////
-                //TODO remove this once 2-way rels are working
-                List<Entity> comboList = new ArrayList<>();
-                comboList.addAll(topConnections);
-                comboList.addAll(bottomConnections);
-                topConnections = comboList;
-                bottomConnections = comboList;
-                /////
+
                 
                 //Grab general rendering values for everything
                 Point2D.Double center = new Point2D.Double(getWidth() / 2, getHeight() / 2);
