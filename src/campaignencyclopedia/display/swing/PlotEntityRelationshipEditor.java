@@ -141,7 +141,7 @@ public class PlotEntityRelationshipEditor {
                 
             }
         });
-        m_relationshipDropdown.addItem(RelationshipType.LEARN_OF.getDisplayString());
+        m_relationshipDropdown.addItem(RelationshipType.REVEALS.getDisplayString());
         m_relationshipDropdown.addItem(RelationshipType.LEADS_TO.getDisplayString());
         
         //Buttons and lists
@@ -378,7 +378,7 @@ public class PlotEntityRelationshipEditor {
     }
 
     /**
-     * Adds the supplied Relationship to this Editor, if it is "Leads To" or "Learn Of" and
+     * Adds the supplied Relationship to this Editor, if it is "Leads To" or "Reveals" and
      * the current entity is either a plot point or lead type.  It will always be added to the backing store.
      *
      * @param rel the Relationship to add.
@@ -396,9 +396,9 @@ public class PlotEntityRelationshipEditor {
             } else if (m_currentEntityType == EntityType.PLOT_POINT) {
                 m_relsInModel.addElement(rel);
             }
-        } else if (rel.getRelationshipText().equals(RelationshipType.LEARN_OF.getDisplayString())) {
-            //If we're at a plot point, then we must be pointing out to a lead we learned of here
-            //Otherwise if we're at a lead, the learn of rel must be pointing in from the node we learned it at
+        } else if (rel.getRelationshipText().equals(RelationshipType.REVEALS.getDisplayString())) {
+            //If we're at a plot point, then we must be pointing out to a lead we reveal here
+            //Otherwise if we're at a lead, the reveals rel must be pointing in from the node we revealed it at
             if (m_currentEntityType == EntityType.PLOT_POINT) {
                 m_relsOutModel.addElement(rel);
             } else if (m_currentEntityType == EntityType.PLOT_LEAD) {

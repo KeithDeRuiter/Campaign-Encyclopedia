@@ -151,8 +151,7 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                         if (r.getRelationshipText().equals(RelationshipType.LEADS_TO.getDisplayString())) {
                             //Found a thing that this lead leads to, put it 'on top'
                             topConnections.add(dstEntity);
-                        } else if (r.getRelationshipText().equals(RelationshipType.LEARN_OF.getDisplayString())) {
-                            //TODO this only works pending a 2-way relationship queary
+                        } else if (r.getRelationshipText().equals(RelationshipType.REVEALS.getDisplayString())) {
                             //Found a thing which reveals this lead, put it 'on bottom'
                             bottomConnections.add(srcEntity);
                         }
@@ -169,12 +168,11 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                             continue;
                         }
                         
-                        if (r.getRelationshipText().equals(RelationshipType.LEARN_OF.getDisplayString())) {
-                            //Find leads that are learned about based on this plot point and put them 'on top'
+                        if (r.getRelationshipText().equals(RelationshipType.REVEALS.getDisplayString())) {
+                            //Find leads that are revealed based on this plot point and put them 'on top'
                             topConnections.add(dstEntity);
                         } else if (r.getRelationshipText().equals(RelationshipType.LEADS_TO.getDisplayString())) {
                             //Find leads that lead to this plot point and put them 'on bottom'
-                            //TODO this only works pending a 2-way relationship queary
                             bottomConnections.add(srcEntity);
                         }
                     }
@@ -294,8 +292,8 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                         List<String> hoverRelationships = new ArrayList<>();
                         hoverRelationships.add(RELATIONSHIPS);
                         for (Relationship rel : currentRelMgr.getPublicRelationships()) {
-                            if (rel.getRelatedEntity().equals(m_hoveredEntity)) {
-                                String line = "\n  - " + rel.getRelationshipText() + " " + m_accessor.getEntity(rel.getRelatedEntity()).getName();
+                            if (rel.getRelatedEntity().equals(m_hoveredEntity) || rel.getEntityId().equals(m_hoveredEntity)) {
+                                String line = "\n  - " + m_accessor.getEntity(rel.getEntityId()).getName() + " " + rel.getRelationshipText() + " " + m_accessor.getEntity(rel.getRelatedEntity()).getName();
                                 hoverRelationships.add(line);
                                 int stringWidth = orignalFontMetrics.stringWidth(line);
                                 if (maxWidth < stringWidth) {
@@ -304,8 +302,8 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                             }
                         }
                         for (Relationship rel : currentRelMgr.getSecretRelationships()) {
-                            if (rel.getRelatedEntity().equals(m_hoveredEntity)) {
-                                String line = "\n  - " + rel.getRelationshipText() + " " + m_accessor.getEntity(rel.getRelatedEntity()).getName() + " (Secret)";
+                            if (rel.getRelatedEntity().equals(m_hoveredEntity) || rel.getEntityId().equals(m_hoveredEntity)) {
+                                String line = "\n  - " + m_accessor.getEntity(rel.getEntityId()).getName() + " " + rel.getRelationshipText() + " " + m_accessor.getEntity(rel.getRelatedEntity()).getName() + " (Secret)";
                                 hoverRelationships.add(line);
                                 int stringWidth = orignalFontMetrics.stringWidth(line);
                                 if (maxWidth < stringWidth) {
