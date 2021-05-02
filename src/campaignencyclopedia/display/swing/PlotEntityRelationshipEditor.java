@@ -200,7 +200,7 @@ public class PlotEntityRelationshipEditor {
                     if (selectedIndex >= 0) {
                         Relationship selected = m_relsInModel.getElementAt(selectedIndex);
                         if (selected != null) {
-                            m_entityDisplay.showEntity(selected.getRelatedEntity());
+                            m_entityDisplay.showEntity(selected.getEntityId());
                         }
                     }
                  
@@ -267,7 +267,8 @@ public class PlotEntityRelationshipEditor {
                         menu.add(new AbstractAction("Delete") {
                             @Override
                             public void actionPerformed(ActionEvent ae) {
-                                m_relsInModel.removeElement(relationship);
+                                //Removes from all models (for safety) and the original list
+                                removeRelationship(relationship);
                             }
                         });
                         
@@ -310,7 +311,8 @@ public class PlotEntityRelationshipEditor {
                         menu.add(new AbstractAction("Delete") {
                             @Override
                             public void actionPerformed(ActionEvent ae) {
-                                m_relsOutModel.removeElement(relationship);
+                                //Removes from all models (for safety) and the original list
+                                removeRelationship(relationship);
                             }
                         });
                         
