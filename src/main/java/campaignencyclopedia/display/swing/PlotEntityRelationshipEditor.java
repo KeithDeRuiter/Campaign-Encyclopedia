@@ -13,6 +13,7 @@ import campaignencyclopedia.data.Relationship;
 import campaignencyclopedia.data.RelationshipType;
 import campaignencyclopedia.display.EntityDisplay;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -23,7 +24,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import static java.util.Collections.swap;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -41,6 +41,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
 import toolbox.display.EditListener;
+import toolbox.display.dialog.DialogFactory;
+import toolbox.display.dialog.OkCancelCommitManager;
 
 /**
  *
@@ -72,7 +74,8 @@ public class PlotEntityRelationshipEditor {
     private final JButton m_addPlotConnectionButton;
     
     private JComboBox<String> m_relationshipDropdown;
-    private JComboBox<Entity> m_plotEntityDropdown;
+    private JComboBox<Entity> m_srcPlotEntityDropdown;
+    private JComboBox<Entity> m_dstPlotEntityDropdown;
     
     private JLabel m_titleLabel;
     private JPanel m_controlBar;
@@ -89,10 +92,13 @@ public class PlotEntityRelationshipEditor {
 
     private Frame m_parent;
 
-    private static final String POINT_OUT_LABEL = "Learn Of";
-    private static final String POINT_IN_LABEL = "Revealed By";
-    private static final String LEAD_OUT_LABEL = "Leads To";
-    private static final String LEAD_IN_LABEL = "Discovered At";
+    private static final RelationshipType LEAD_TO_POINT_REL = RelationshipType.LEADS_TO;
+    private static final RelationshipType POINT_TO_LEAD_REL = RelationshipType.REVEALS;
+    
+//    private static final String POINT_OUT_LABEL = "Learn Of";
+//    private static final String POINT_IN_LABEL = "Revealed By";
+//    private static final String LEAD_OUT_LABEL = "Leads To";
+//    private static final String LEAD_IN_LABEL = "Discovered At";
     
     
     /**
@@ -126,8 +132,16 @@ public class PlotEntityRelationshipEditor {
         };
         
         //Dropdowns
-        m_plotEntityDropdown = new JComboBox<>();
-        m_plotEntityDropdown.addItemListener(new ItemListener() {
+        m_srcPlotEntityDropdown = new JComboBox<>();
+        m_srcPlotEntityDropdown.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                
+            }
+        });
+
+        m_dstPlotEntityDropdown = new JComboBox<>();
+        m_dstPlotEntityDropdown.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 
@@ -138,24 +152,32 @@ public class PlotEntityRelationshipEditor {
         m_relationshipDropdown.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                
+                refreshEntityList();
             }
         });
-        m_relationshipDropdown.addItem(RelationshipType.REVEALS.getDisplayString());
-        m_relationshipDropdown.addItem(RelationshipType.LEADS_TO.getDisplayString());
+        m_relationshipDropdown.addItem(POINT_TO_LEAD_REL.getDisplayString());
+        m_relationshipDropdown.addItem(LEAD_TO_POINT_REL.getDisplayString());
         
         //Buttons and lists
         m_addPlotConnectionButton = new JButton("Add Relationship");
         m_addPlotConnectionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                if (m_entityDisplay.getShownEntity() != null) {
+                UUID shownEntity = m_entityDisplay.getShownEntity();
+                
+                if (shownEntity != null) {
                     List<Entity> entities = m_accessor.getAllEntities();
                     if (entities.size() > 0) {
-                        UUID relatedTo = ((Entity)m_plotEntityDropdown.getSelectedItem()).getId();
-                        String relationshipType = (String)m_relationshipDropdown.getSelectedItem();
-                        Relationship newRel = new Relationship(m_entityDisplay.getShownEntity(), relatedTo, relationshipType, false);
-                        addRelationship(newRel);
+                        UUID src = ((Entity)m_srcPlotEntityDropdown.getSelectedItem()).getId();
+                        UUID dst = ((Entity)m_dstPlotEntityDropdown.getSelectedItem()).getId();
+                        
+                        if (shownEntity.equals(src) || shownEntity.equals(dst)) {
+                            String relationshipType = (String)m_relationshipDropdown.getSelectedItem();
+                            Relationship newRel = new Relationship(src, dst, relationshipType, false);
+                            addRelationship(newRel);
+                        } else {
+                            JOptionPane.showMessageDialog(m_parent, "One end of the Relationship must be the current entity.", "Invalid Relationship Ends", JOptionPane.OK_OPTION);
+                        }
                     } else {
                         JOptionPane.showMessageDialog(m_parent, "No entities exist in this campaign.", "No Entities to Relate To", JOptionPane.OK_OPTION);
                     }
@@ -234,7 +256,7 @@ public class PlotEntityRelationshipEditor {
 //                            });                            
 //                        }
                         
-//                        // Edit Action
+                        // Edit Action
 //                        menu.add(new AbstractAction("Edit") {
 //                            @Override
 //                            public void actionPerformed(ActionEvent ae) {
@@ -307,6 +329,35 @@ public class PlotEntityRelationshipEditor {
                         // Create Menu
                         JPopupMenu menu = new JPopupMenu();
                         
+                        // Edit Action
+//                        menu.add(new AbstractAction("Edit") {
+//                            @Override
+//                            public void actionPerformed(ActionEvent ae) {
+//                                if (m_entityDisplay.getShownEntity() != null) {
+//                                    List<Entity> entities = m_accessor.getAllEntities();
+//                                    if (entities.size() > 0) {
+//                                        // Create Dialog
+//                                        final RelationshipDialogContent dc = new RelationshipDialogContent(m_accessor, m_entityDisplay.getShownEntity());
+//                                        dc.setRelationship(relationship);
+//                                        
+//                                        // OK Runnable
+//                                        Runnable commit = new Runnable() {
+//                                            @Override
+//                                            public void run() {
+//                                                m_relsInModel.removeElement(relationship);
+//                                                m_relsInModel.addElement(dc.getDisplayedRelationship());
+//                                            }
+//                                        };
+//                                        
+//                                        // Launch Dialog
+//                                        DialogFactory.buildDialog(m_parent, "Edit Relationship", true, dc, new OkCancelCommitManager(commit));
+//                                    } else {
+//                                        JOptionPane.showMessageDialog(m_parent, "No entities exist in this campaign.", "No Entities to Relate To", JOptionPane.OK_OPTION);
+//                                    }
+//                                }
+//                            }
+//                        });
+                        
                         // Remove Action
                         menu.add(new AbstractAction("Delete") {
                             @Override
@@ -336,9 +387,15 @@ public class PlotEntityRelationshipEditor {
         gbc.fill = GridBagConstraints.BOTH;
         
         m_controlBar = new JPanel(new GridBagLayout());
+//        gbc.weightx = 1.0f;
+        m_controlBar.add(m_srcPlotEntityDropdown, gbc);
+//        gbc.weightx = 0.0f;
+        gbc.gridx++;
         m_controlBar.add(m_relationshipDropdown, gbc);
         gbc.gridx++;
-        m_controlBar.add(m_plotEntityDropdown, gbc);
+//        gbc.weightx = 1.0f;
+        m_controlBar.add(m_dstPlotEntityDropdown, gbc);
+//        gbc.weightx = 0.0f;
         gbc.gridx++;
         m_controlBar.add(m_addPlotConnectionButton, gbc);
         //Spacer for the right side... TODO feels like this shouldn't be necessary...
@@ -359,15 +416,42 @@ public class PlotEntityRelationshipEditor {
     public void refreshEntityList() {
         List<Entity> allEntities = m_accessor.getAllEntities();
         
-        m_plotEntityDropdown.removeAllItems();
+        String relText = (String)m_relationshipDropdown.getSelectedItem();
+        Entity current = m_accessor.getEntity(m_entityDisplay.getShownEntity());
+        Entity longestName = current;
+        
+        m_srcPlotEntityDropdown.removeAllItems();
+        m_dstPlotEntityDropdown.removeAllItems();
         for (Entity e : allEntities) {
-            //Only add PLOT things as available, linkable entities
-            if (e.getType() == EntityType.PLOT_LEAD && m_currentEntityType == EntityType.PLOT_POINT) {
-                m_plotEntityDropdown.addItem(e);
-            } if (e.getType() == EntityType.PLOT_POINT && m_currentEntityType == EntityType.PLOT_LEAD) {
-                m_plotEntityDropdown.addItem(e);
+            //Only add PLOT things as available, linkable entities, associated based on which rel we are using
+            if (LEAD_TO_POINT_REL.getDisplayString().equals(relText)) {
+                if (e.getType() == EntityType.PLOT_LEAD) {
+                    m_srcPlotEntityDropdown.addItem(e);
+                } else if (e.getType() == EntityType.PLOT_POINT) {
+                    m_dstPlotEntityDropdown.addItem(e);
+                }
+            } else if (POINT_TO_LEAD_REL.getDisplayString().equals(relText)) {
+                if (e.getType() == EntityType.PLOT_LEAD) {
+                    m_dstPlotEntityDropdown.addItem(e);
+                } else if (e.getType() == EntityType.PLOT_POINT) {
+                    m_srcPlotEntityDropdown.addItem(e);
+                }
+            }
+            
+            //For setting combobox size
+            if (longestName == null || e.getName().length() > longestName.getName().length()) {
+                longestName = e;
             }
         }
+        
+        //Set our current entity to be selected (it should only be in one of the fields...)
+        m_srcPlotEntityDropdown.setSelectedItem(current);
+        m_dstPlotEntityDropdown.setSelectedItem(current);
+        
+        
+        //Make them the same size so they stop pushing the rel dropdown around...
+        m_srcPlotEntityDropdown.setPrototypeDisplayValue(longestName);
+        m_dstPlotEntityDropdown.setPrototypeDisplayValue(longestName);
     }
 
     public void setData(Set<Relationship> relationships) {
@@ -393,7 +477,7 @@ public class PlotEntityRelationshipEditor {
         
         // Need to compare display name to rel. string since Relationships don't actually have a static enum list
         // and the toString includes more info like the UUIDs etc.  Cheap way to compare "type"
-        if (rel.getRelationshipText().equals(RelationshipType.LEADS_TO.getDisplayString())) {
+        if (rel.getRelationshipText().equals(LEAD_TO_POINT_REL.getDisplayString())) {
             //If we're at a lead, then Leads to is pointing out to the node this leads leads to
             //Otherwise if we're at a point, then this must be a link pointing to here from a lead
             if (m_currentEntityType == EntityType.PLOT_LEAD) {
@@ -401,7 +485,7 @@ public class PlotEntityRelationshipEditor {
             } else if (m_currentEntityType == EntityType.PLOT_POINT) {
                 m_relsInModel.addElement(rel);
             }
-        } else if (rel.getRelationshipText().equals(RelationshipType.REVEALS.getDisplayString())) {
+        } else if (rel.getRelationshipText().equals(POINT_TO_LEAD_REL.getDisplayString())) {
             //If we're at a plot point, then we must be pointing out to a lead we reveal here
             //Otherwise if we're at a lead, the reveals rel must be pointing in from the node we revealed it at
             if (m_currentEntityType == EntityType.PLOT_POINT) {
