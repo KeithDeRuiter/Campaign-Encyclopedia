@@ -16,10 +16,12 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Polygon;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
@@ -49,6 +51,8 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
     private static final String RELATIONSHIPS = "Relationships:";
     private static final Shape BACK_BUTTON = new Rectangle2D.Double(0, 0, 40, 20);
     private static final Shape FWD_BUTTON = new Rectangle2D.Double(40, 0, 40, 20);
+    private static final int ARROW_X_PTS[] = {0, 6, -6};
+    private static final int ARROW_Y_PTS[] = {0, 14, 14};
 
     /** The user's navigation history.  Used to aid in navigating around the orbital display. */
     private NavigationPath m_path;
@@ -197,28 +201,32 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                 
                 //Populate the top relationships
                 int numTops = topConnections.size();
-                float topAngle = fanWidth / numTops;
-                float currentAngle = 360.0f - ((topAngle + (180.0f - fanWidth)) / 2.0f);  //Top starts at 360, offset by half the spread angle and goes CCW
+                float topAngleDelta = fanWidth / numTops;
+                float currentAngle = 360.0f - ((topAngleDelta + (180.0f - fanWidth)) / 2.0f);  //Top starts at 360, offset by half the spread angle and goes CCW
                 for (Entity e : topConnections) {
                     RenderingConfig config = new RenderingConfig();
                     config.dotPoint = getPoint(center, currentAngle, getDotLineLength());
                     config.textPoint = getPoint(center, currentAngle, getTextLineLength());
                     config.entity = e;
+                    config.isTop = true;
+                    config.angle = currentAngle;  //Store angle for ease of computation later
                     m_renderingConfigs.add(config);
-                    currentAngle -= topAngle;  //See getPoint on this class
+                    currentAngle -= topAngleDelta;  //See getPoint on this class
                 }
                 
                 // Repopulate the bottom location map.
                 int numBottoms = bottomConnections.size();
-                float bottomAngle = fanWidth / numBottoms;
-                currentAngle = 0.0f + ((bottomAngle + (180.0f - fanWidth)) / 2.0f);  //Bottom starts at 0, offset by half the spread angle and goes CW
+                float bottomAngleDelta = fanWidth / numBottoms;
+                currentAngle = 0.0f + ((bottomAngleDelta + (180.0f - fanWidth)) / 2.0f);  //Bottom starts at 0, offset by half the spread angle and goes CW
                 for (Entity e : bottomConnections) {
                     RenderingConfig config = new RenderingConfig();
                     config.dotPoint = getPoint(center, currentAngle, getDotLineLength());
                     config.textPoint = getPoint(center, currentAngle, getTextLineLength());
                     config.entity = e;
+                    config.isTop = false;
+                    config.angle = currentAngle;  //Store angle for ease of computation later
                     m_renderingConfigs.add(config);
-                    currentAngle += bottomAngle;  //See getPoint on this class
+                    currentAngle += bottomAngleDelta;  //See getPoint on this class
                 }
 
                 // Draw all of the lines and their relationship dots
@@ -228,6 +236,23 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                         // Lines first
                         g2.setPaint(Colors.LINE);
                         g2.draw(new Line2D.Double(center.x, center.y, rc.dotPoint.x, rc.dotPoint.y));
+                        
+                        //Arrowheads
+                        AffineTransform p = g2.getTransform();  //store old transform to allow for rotation/translation
+                        g2.translate(center.x, center.y);
+                        
+                        if (rc.isTop) {
+                            double angleRad = Math.toRadians(rc.angle + 90);
+                            g2.rotate(angleRad);
+                            g2.translate(0, halfDotRadius - DOT_LINE_LENGTH);
+                        } else {
+                            double angleRad = Math.toRadians(rc.angle - 90);
+                            g2.rotate(angleRad);
+                            g2.translate(0, CIRCLE_RADIUS);
+                        }
+                        g2.fill(new Polygon(ARROW_X_PTS, ARROW_Y_PTS, ARROW_X_PTS.length));
+                        
+                        g2.setTransform(p);
 
                         // Then Dots
                         g2.setPaint(Colors.getColor(relatedTo.getType()));
@@ -523,5 +548,8 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
         private Point2D.Double textPoint;
         private Shape dot;
         private Entity entity;  //Store entity to prevent double lookups during repaint
+        /** In Degrees. */
+        private float angle;
+        private boolean isTop;
     }
 }
