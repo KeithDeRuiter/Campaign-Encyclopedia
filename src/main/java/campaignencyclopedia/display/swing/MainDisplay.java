@@ -147,10 +147,10 @@ public class MainDisplay implements EditListener, UserDisplay {
     public static final Color SILVER = new Color(248, 248, 248);
 
     /** The current release version number. */
-    public static final String VERSION = "v1.6.0";
+    public static final String VERSION = "v1.6.0+";
 
     /** The date this release was created. */
-    public static final String DATE = "February 07, 2017";
+    public static final String DATE = "February 07, 2017 +";
 
     /** Logger. */
     private static final Logger LOGGER = Logger.getLogger(MainDisplay.class.getName());
@@ -377,7 +377,7 @@ public class MainDisplay implements EditListener, UserDisplay {
         m_frame.setVisible(true);
         
         //Now that the frame is visible, set the split divider location to a reasonable size
-        m_entitySplitPane.setDividerLocation(0.15);
+        m_entitySplitPane.setDividerLocation(0.18);
     }
 
     /** Initialize this display's components. */

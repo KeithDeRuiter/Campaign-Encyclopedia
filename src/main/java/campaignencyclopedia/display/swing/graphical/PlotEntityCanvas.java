@@ -11,6 +11,7 @@ import campaignencyclopedia.data.TimelineEntry;
 import campaignencyclopedia.display.EntityDisplay;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -184,7 +185,14 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                 } else {
                     //Something else, just grab all relationships and put them below.  Probably shouldn't happen.
                     for (Relationship r : relationships) {
-                        bottomConnections.add(m_accessor.getEntity(r.getRelatedEntity()));
+                        Entity dstEntity = m_accessor.getEntity(r.getRelatedEntity());
+                        Entity srcEntity = m_accessor.getEntity(r.getEntityId());
+                        
+                        if (currentEntity.equals(srcEntity)) {
+                            topConnections.add(dstEntity);
+                        } else {
+                            bottomConnections.add(dstEntity);
+                        }
                     }
                 }
                 
@@ -255,14 +263,14 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                         g2.setTransform(p);
 
                         // Then Dots
-                        g2.setPaint(Colors.getColor(relatedTo.getType()));
+                        g2.setPaint(Colors.getColor(rc.entity.getType()));
                         rc.dot = new Ellipse2D.Double(rc.dotPoint.x - halfDotRadius, rc.dotPoint.y - halfDotRadius, dotRadius, dotRadius);
                         g2.fill(rc.dot);
 
                         // Then Text
                         g2.setPaint(Color.BLACK);
-                        double strWidth = orignalFontMetrics.stringWidth(relatedTo.getName());
-                        String name = relatedTo.getName();
+                        double strWidth = orignalFontMetrics.stringWidth(rc.entity.getName());
+                        String name = rc.entity.getName();
                         if (rc.textPoint.x < center.x) {
                             g2.drawString(name, (float)(rc.textPoint.x - strWidth), (float)rc.textPoint.y);
                         } else {
@@ -451,19 +459,25 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                 } else if (m_currentEntityId != null &&
                            m_currentEntityShape != null &&
                            m_currentEntityShape.contains(click)) {
-                    if (me.isControlDown()) {
-                        m_display.showEntity(m_currentEntityId);
-                    }
+                    //Don't require a modifier to jump to next entity, cursor will change
+                    //This covers the showing the already shown entity, which probably isn't an issue...
+                    m_display.showEntity(m_currentEntityId);
                 } else {
                     for (RenderingConfig rc : m_renderingConfigs) {
                         if (rc.dot.contains(me.getPoint())) {
                             UUID id = rc.entity.getId();
-                            if (me.isControlDown()) {
-                                m_display.showEntity(id);
-                            } else {
-                                m_path.add(id);
-                                show(m_accessor.getEntity(id));
-                            }
+                            
+                            //You clicked on an entity, so make the whole display show that one
+                            m_display.showEntity(id);
+                                
+//                            //This code is for "change displayed entities on CTRL click, but change display of orbit only on normal click
+//                            if (me.isControlDown()) {
+//                                m_display.showEntity(id);
+//                            } else {
+//                                //Show the next thing without actually changing which entity is displayed on the whole display
+//                                m_path.add(id);
+//                                show(m_accessor.getEntity(id));
+//                            }
 
                             // Clear out hover data so we don't have any lingering displays.
                             m_hoveredEntity = null;
@@ -491,16 +505,20 @@ public class PlotEntityCanvas extends JComponent implements CanvasDisplay  {
                     }
                 }
 
-                // Clear out the hovered entity if none exists
+                // Clear out the hovered entity and cursor if none exists, else set cursor
                 if (found == false) {
                     m_hoveredEntity = null;
                     m_hoverPoint = null;
+                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                     repaint();
+                } else {
+                    setCursor(new Cursor(Cursor.HAND_CURSOR));
                 }
             }
         });
     }
 
+    
     /** {@inheritDoc} */
     @Override
     public void dataRemoved(UUID id) {
